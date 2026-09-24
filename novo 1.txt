@@ -1,0 +1,65 @@
+consegue ler isso num resumo e fazer algo visual p mim? onde falo gerar imagem gera uma iamgem legal e monta isso num html
+
+
+ (i) Análise Lexica, (ii) Parser, (iii) Runtime, (iv) Interpretador, (v) Máquina Virtual, (vi) Compilador.
+ 
+ 
+Análise Lexica
+le toda a cadeia de caractere e gera um significado quando um conjunto de caracteres assume um valor possivel dentro da linguagem
+
+Esse arquivo é uma lista de regras para o léxico. O Rexical   O Rexical é um gerador de léxico mesmo papel do Flex para C.
+
+  class Sample              ← nome do léxico que vai ser gerado
+  macro
+    BLANK   [\ \t]+         ← "apelido" para uma regex: 1 ou mais espaços/tabs
+  rule                      ← a partir daqui: PADRÃO   →   O QUE GERAR
+    {BLANK}                 ← espaço: sem ação = ignora
+    \d+     { [:digit, text.to_i] }   ← dígitos → token digit (convertido pra número)
+    \w+     { [:word, text] }         ← letras/palavras → token word
+    \n                      ← quebra de linha: ignora
+    .       { [text, text] }          ← QUALQUER outro caractere → [ele, ele]
+  end
+
+
+creio que aqui "simplificamos a linguagem" isso estamos usano
+
+    .       { [text, text] }          ← QUALQUER outro caractere → [ele, ele]
+
+  text é o lexema, ou seja, o pedaço do código que a regex casou.
+  
+    💡 A última regra explica a sua dúvida anterior. O . pega qualquer caractere que sobrou ((, ), +, =…) e gera [text, text],
+	
+	
+	 Exemplo: entrada soma = 42 + x
+
+  ┌────────┬─────────────────┬──────────────────────────────────┐
+  │ Pedaço │ Regra que casou │              Token               │
+  ├────────┼─────────────────┼──────────────────────────────────┤
+  │ soma   │ \w+             │ [:word, "soma"]                  │
+  ├────────┼─────────────────┼──────────────────────────────────┤
+  │        │ {BLANK}         │ (ignorado)                       │
+  ├────────┼─────────────────┼──────────────────────────────────┤
+  │ =      │ .               │ ["=", "="]                       │
+  ├────────┼─────────────────┼──────────────────────────────────┤
+  │ 42     │ \d+             │ [:digit, 42] ← número, não texto │
+  ├────────┼─────────────────┼──────────────────────────────────┤
+  │ +      │ .               │ ["+", "+"]                       │
+  ├────────┼─────────────────┼──────────────────────────────────┤
+  │ x      │ \w+             │ [:word, "x"]                     │
+  └────────┴─────────────────┴──────────────────────────────────┘
+
+  A ordem importa: 42 também casaria com \w+, mas \d+ vem antes e ganha. É por esse mesmo motivo que o enunciado fala de = vs ==: a regra de == tem que ser testada antes da regra de =, senão == vira dois =.
+
+  No seu trabalho não precisa de Rexical nem de Ruby. Em Python a ideia é igual: uma lista de (regex, tipo) testada em ordem com o módulo re.
+
+
+leagl né? é tipo uma "cascata" aqui vc gera uma imagem tipo pedrinhas com coisinhas caindo nos buracos que sao os tokens...
+
+igual um separador de moeda sabe 
+
+
+ a regra de == tem que ser testada antes da regra de =, senão == vira dois =. pra n cair no "Buraco errado" imagem aqui chat
+ 
+ 
+ 
+ 
