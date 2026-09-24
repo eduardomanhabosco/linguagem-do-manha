@@ -49,6 +49,8 @@ Formato de cada entrada: **Data · Problema/decisão · O que tentamos · Result
 - **Correção do usuário (escopo):** entendi o "leva tudo" como incluindo outros projetos do PC e comecei a levantá-los. Ele interrompeu: "não commita nada que não seja em relação a isso da matéria". Por isso o `docs/claude/` ficou só com o LEIA-ME e a cópia desta conversa (a config geral do Claude ficou de fora), e as regras que valem para este trabalho (modo estudo, padrão de commit, decisões já tomadas, escopo) foram escritas no `CLAUDE.md` do projeto. **Aprendizado:** "tudo" = tudo do projeto atual.
 - **Conversa:** `docs/claude/conversa-2026-09-23.jsonl`, copiada antes do pedido de commit. A documentação oficial confirma que `claude --resume <caminho do .jsonl>` retoma uma conversa a partir do arquivo.
 - **Commits** (feitos pelo Claude, a pedido do usuário): `:tada: init`, `:books: docs` (enunciados e materiais), `:books: docs` (documentação e anotações) e `:wrench: chore` (conversa com o Claude), todos com `Co-Authored-By` do Claude.
+- **Commit extra:** `.gitattributes` com `*.jsonl -text`. No Windows, o Git trocaria as quebras de linha (LF → CRLF) da cópia da conversa ao baixar, o que podia atrapalhar o `claude --resume`.
+- **Push:** OK, 5 commits (`bd4a16b` a `6cbdb0d`), mais um último com este registro. **Teste:** clone numa pasta temporária: mesmo commit do GitHub, os 15 arquivos iguais aos originais, slides e PDF idênticos byte a byte, `.jsonl` idêntico (909 linhas JSON válidas) e os imports do `CLAUDE.md` carregando.
 
 ## Uso de IA (para a declaração obrigatória)
 | Data | Ferramenta | Finalidade | Etapa | Como verificamos | O que o aluno fez/alterou |

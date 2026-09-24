@@ -73,7 +73,7 @@ Léxico já visto (token, lexema, maior casamento, reservada × identificador). 
 - [ ] Árvore de derivação de um exemplo (ex.: `2 + 3 * 4`) para o relatório [aviso: "com árvore de derivação"]
 
 ## 4. Marco 3 — Analisador léxico = EI03 (código até 01/10; EI03 até 09/10, 19:20, sem atraso)
-- [ ] Criar repositório git + `.gitignore` → **adiantado em 24/09 (troca de PC)**: repo PRIVADO com tudo, inclusive `CLAUDE.md` e `docs/`. Marcar `[x]` quando o push estiver confirmado.
+- [x] Criar repositório git + `.gitignore` → adiantado em 24/09 (troca de PC): repo PRIVADO com o que é da disciplina, inclusive `CLAUDE.md` e `docs/`; push conferido com um clone.
 - [ ] Lê o programa de um arquivo de texto [EI03 P3a]
 - [ ] Gera a sequência de tokens (classe + lexema, com linha e coluna) na tela ou em arquivo [EI03 P3b]
 - [ ] Palavra reservada × identificador (tabela de reservadas) [EI03 P2a]

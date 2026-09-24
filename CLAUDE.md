@@ -37,7 +37,7 @@ Criar uma linguagem de programação temática (inspirada na BIRL) e um transpil
 - Tema não fechado (ideia mais forte: cassino). Linguagem destino não decidida (recomendado: C).
 - Nada testado. **Sem compilador C no PC antigo** (gcc, clang, tcc e cl não encontrados em 23/09); conferir no PC novo e instalar antes da geração de código (MAPA 0.6).
 - Fase atual: estudo dos conceitos, um por mensagem (MAPA §1). Vistos: 1 (visão geral) e 2 (GLC). **3 (BNF e EBNF) enviado em 24/09**; perguntar se há dúvidas e seguir para o 4 (derivação).
-- **Troca de PC em 2026-09-24:** repo privado criado; commits e push feitos pelo Claude a pedido do usuário (resultado no DEVLOG).
+- **Troca de PC em 2026-09-24:** repo privado no GitHub com tudo o que é da disciplina; commits e push feitos pelo Claude a pedido do usuário e conferidos com um clone de teste. No PC novo: `docs/claude/LEIA-ME.md`.
 
 ## Como retomar
 1. Abrir o Claude Code **dentro desta pasta** (PowerShell: `cd "<pasta do projeto>"` e depois `claude`). Só assim este arquivo e os imports carregam sozinhos; aberto em outra pasta, nada disso é lido.
@@ -50,6 +50,7 @@ Criar uma linguagem de programação temática (inspirada na BIRL) e um transpil
 ```
 CLAUDE.md               este resumo
 .gitignore              ignora __pycache__/
+.gitattributes          *.jsonl sem conversão de quebra de linha (para o claude --resume ler a conversa)
 novo 1.txt              anotações do usuário (resumos, aprendizados, ideias); só leitura para o Claude
 lexico.py               testes de regex; vai virar o analisador léxico
 Aula_02_-_Formal_Languages_Aluno.pptx (+ cópia "(1)", mesmo texto)  alfabeto Σ, palavra, ε, Σ*, Σ⁺, concatenação, fecho de Kleene, ∅ × {ε}
