@@ -231,7 +231,7 @@ Reunidas aqui em 25/09 (antes estavam espalhadas nos conceitos). Cada uma tem as
 - [~] ⚠ Ferramentas de IA usadas e para quê → pronto em `entrega/`, falta completar os campos [PREENCHER] (livros consultados, alterações do grupo, sobrenomes)
 ### README [v6 §9]
 - [x] Pré-requisitos (Python, gcc), como compilar/rodar, exemplo de uso
-- [ ] Código organizado; testar do zero numa pasta limpa
+- [x] Código organizado; testar do zero numa pasta limpa → clone do GitHub: 10 de 10 (25/09)
 
 ## 7. Apresentação e defesa — 15 pts (ensaio 08/10; data real no item 0.1) [v6 §11, §12]
 - [ ] Apresentar a linguagem, a proposta e as características (2)

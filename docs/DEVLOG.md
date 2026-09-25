@@ -88,7 +88,7 @@ Formato de cada entrada: **Data · Problema/decisão · O que tentamos · Result
 - **EI03 é individual ou em dupla:** o grupo tem 4 pessoas, então cada dupla (ou pessoa) gera o seu, trocando `INTEGRANTES_EI03` no script. O gerado agora está no nome do Eduardo.
 - **Campos em amarelo `[PREENCHER]`** nos PDFs: livros efetivamente consultados e alterações feitas pelo grupo. A IA não pode inventar isso.
 - **Roteiro:** `docs/ROTEIRO_APRESENTACAO.md`. Gabriel: abertura/tema/decisões; Eduardo: léxico; Rafael: gramática/parser; Felipe: semântica/geração/testes. Traz os comandos da demo, receitas para pedidos ao vivo e perguntas prováveis.
-- **MAPA:** 161 itens `[x]`. Abertos: itens 0.x (confirmar datas e EI03 em Python), mostrar o marco ao professor, todos dominarem o código, teste numa pasta limpa, apresentação.
+- **MAPA:** itens testados marcados. **Clone limpo do GitHub (commit 0ecafbf): 10 de 10.** Abertos: itens 0.x (confirmar datas e EI03 em Python), mostrar o marco ao professor, todos dominarem o código, apresentação.
 
 ## Uso de IA (para a declaração obrigatória)
 | Data | Ferramenta | Finalidade | Etapa | Como verificamos | O que o aluno fez/alterou |
