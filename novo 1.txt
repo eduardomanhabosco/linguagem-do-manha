@@ -62,4 +62,146 @@ igual um separador de moeda sabe
  
  
  
- 
+ Conceito 3: BNF e EBNF
+
+   BNF (Backus-Naur Form)
+    Os símbolos:
+  - <Nome>: uma variável (não-terminal).
+  - ::=: "é definido como". Faz o papel da flecha →.
+  - |: "ou".
+  - "HORA_DO_SHOW", com aspas: um terminal de texto fixo, como uma palavra reservada ou um símbolo.
+  - id, num, string, sem aspas: um terminal que representa uma classe de token. O lexema varia (x, saldo, 42).
+
+  - { X }: X repetido zero ou mais vezes (como o *).
+  - [ X ]: X opcional, zero ou uma vez (como o ?).
+  - ( X | Y ): agrupa, para poder usar o "ou" no meio de uma regra.
+
+  
+  - "BIRL" fecha três coisas: o programa, o if e o while. Funciona porque o parser sabe o que foi aberto. A escolha do delimitador de bloco é uma das "decisões próprias" que o enunciado sugere.
+
+
+  
+● Conceito 4: Derivação e árvore de derivação
+
+= e a árvore é o que o parser realmente constrói.
+
+  Árvore de derivação × AST (uma prévia do conceito 9): a árvore de derivação guarda tudo: cada variável, cada parêntese e cada ;. A AST é a versão enxuta, só com o que importa para gerar o C. 
+
+
+
+   Conceito 5: Ambiguidade e precedência
+
+
+   No conceito 4 vimos que a árvore guarda a estrutura do programa. Agora vem o problema: e se um mesmo programa puder ter duas árvores?
+
+   pode ser ou
+     Esta parece a forma mais natural de descrever conta:
+  <E> ::= <E> "+" <E> | <E> "*" <E> | num | "(" <E> ")"
+  Com ela, 2 + 3 * 4 tem duas árvores:
+   Árvore A: + em cima              Árvore B: * em cima
+            E                                  E
+        ┌───┼───┐                          ┌───┼───┐
+        E  "+"  E                          E  "*"  E
+        │   ┌───┼───┐                  ┌───┼───┐   │
+      num 2 E  "*"  E                  E  "+"  E num 4
+            │       │                  │       │
+          num 3   num 4              num 2   num 3
+
+   2 + (3 * 4) = 14                    (2 + 3) * 4 = 20
+
+    São os mesmos tokens, com dois significados e dois resultados. Uma gramática assim é ambígua: existe pelo menos um programa com mais de uma árvore de derivação (ou, o que dá no mesmo, com mais de uma
+  derivação mais à esquerda). Para um compilador isso é fatal, porque o C gerado dependeria de qual árvore o parser escolheu por acaso.
+
+  
+  É exatamente a gramática da BIRL-Lite:
+  <Expressao> ::= <Termo> { ( "+" | "-" ) <Termo> }     ← nível do + e do −  (mais fraco)
+  <Termo>     ::= <Fator> { ( "*" | "/" ) <Fator> }     ← nível do * e do /
+  <Fator>     ::= id | num | "(" <Expressao> ")"        ← números, variáveis e parênteses (mais forte)
+
+    A regra geral: quanto mais fraco o operador, mais perto da raiz fica a regra dele, e o que está mais fundo na árvore é calculado primeiro. Os parênteses são a única forma de "furar" os andares, e por isso (2
+  + 3) * 4 continua possível.
+
+
+
+  ┌────────────────┬─────────────────────────────┐
+  │     Andar      │         Operadores          │
+  ├────────────────┼─────────────────────────────┤
+  │ 1 (mais fraco) │ OU                          │
+  ├────────────────┼─────────────────────────────┤
+  │ 2              │ E                           │
+  ├────────────────┼─────────────────────────────┤
+  │ 3              │ NÃO                         │
+  ├────────────────┼─────────────────────────────┤
+  │ 4              │ relacionais == != > >= < <= │
+  ├────────────────┼─────────────────────────────┤
+  │ 5              │ + -                         │
+  ├────────────────┼─────────────────────────────┤
+  │ 6              │ * /                         │
+  ├────────────────┼─────────────────────────────┤
+  │ 7 (mais forte) │ número, variável, ( )       │
+  └────────────────┴─────────────────────────────┘
+
+  
+  Esse else é de qual if? Em C isso é ambíguo na gramática, e a linguagem resolve com uma regra extra ("o else fica com o if mais próximo"). A BIRL-Lite não tem esse problema, porque todo ELE_QUER termina com
+  BIRL, e aí sempre se sabe onde cada if acaba. Quando vocês desenharem o if da linguagem (uma das 3 decisões próprias), lembrem disso: ter um fechamento explícito evita a ambiguidade.
+
+
+
+   Conceito 6: Associatividade e recursão à esquerda
+
+   trabalhando com | abre margem p recursao esquerda e direita
+   damos um ' e trocamos a ordem
+
+   esquerda é ruim pq n temos criterio de parada
+   a conversao a direita comparamos primeiro com alfa 
+   n queremos p nao ter loop infinitos
+
+
+
+   ● Conceito 7: Parser por descida recursiva
+
+     As duas ferramentas do parser
+
+  O parser recebe do léxico uma lista de tokens e tem um "dedo" (pos) apontando o token atual:
+  - proximo(): espia o tipo do token atual, sem avançar;
+  - consome(tipo): confere se o token atual é desse tipo e avança o dedo. Se não for, é erro sintático (conceito 8).
+
+  o programa recebe uma sequencia de tokens e tranforma essa sequencia em uma representação de arvore 
+  https://www.youtube.com/watch?v=0c8b7YfsBKs
+
+
+  
+● Conceito 8: Erros sintáticos
+
+  Um erro sintático acontece quando os tokens existem (o léxico aceitou todos), mas a ordem não bate com nenhuma regra da gramática. É o "comeu gato o" do conceito 1.
+guardar erro e posição dele p retorno
+
+coloca aqui diferença erro sintetico e lexico 
+
+  
+  Conceito 9: AST (árvore sintática abstrata)
+
+  representação hierarquica em forma de arove da estrutura semantica do codigo fonte 
+  como são gerados os AST começa codigo fonte passa primeiro por um analisador lexico que tranforma o texto bruto em partes individuais
+  como palavras chaves, operadores e identificadores 
+esse tokens sao processador por um analisador (parser) que verifica se está tudo na gramatica da luinguagem
+se for valido controi uma arvore AST (é uam versao limpa estruiturada e significativa do codigo sem a sintaxe irrelevante )
+mostra a planta ou diagrama do codigo
+
+
+
+● Conceito 10: Análise semântica e tabela de símbolos
+
+guardar na tabela, se ja teve pega da tabela
+
+
+
+● Conceito 11: Tipos e compatibilidade
+
+
+
+● Conceito 12: Geração de código (AST → C)
+
+
+ É a última estação, e a mais "mecânica": as anteriores já fizeram o trabalho difícil. A gramática resolveu a estrutura, a AST a precedência e a semântica os nomes e tipos. O gerador só percorre a AST e
+  escreve o C equivalente.
