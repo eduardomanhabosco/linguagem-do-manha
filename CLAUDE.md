@@ -3,7 +3,7 @@
 Resumo de TUDO sobre este projeto. Leia inteiro antes de mexer. O usuário fala português (BR); responda em português, com respostas breves (modo estudo). Criado em 2026-09-23.
 
 - Disciplina: Linguagens Formais e Compiladores (GRP00543) — UNIJUÍ, 2026/2º, turma 01RCOMP-101_6N · Prof. Marcos Ronaldo Melo Cavalheiro
-- Pasta: `C:\Users\manha\Downloads\compilador\linguagem-do-manha` (desde 25/09; antes `G:\linguagem do manha`) · Python 3.10+ (só biblioteca padrão; **neste PC o Python não está instalado de verdade**, 25/09) · gcc 4.9.2 em `C:\MinGW\bin`
+- Pasta: `C:\Users\manha\Downloads\compilador\linguagem-do-manha` (desde 25/09; antes `G:\linguagem do manha`) · Python 3.12.10 (instalado via winget em 25/09; só biblioteca padrão) · gcc 4.9.2 em `C:\MinGW\bin`
 - Git: repositório **PRIVADO** `github.com/eduardomanhabosco/linguagem-do-manha` (branch `main`), criado em 2026-09-24 para trocar de PC. Leva o código, este arquivo, `docs/`, `novo 1.txt`, os materiais da aula e `docs/claude/` (LEIA-ME + cópia da conversa). **Só entra o que é da disciplina** (pedido do usuário). Ter os docs no git é exceção à regra geral do usuário (ver "Decisões").
 - Documentos: este arquivo e `docs/` (DEVLOG.md = diário técnico, APRENDIZADOS.md = caderno de termos, MAPA.md = checklist, `enunciados/` = textos do professor, `claude/` = como continuar no PC novo + cópia da conversa)
 
@@ -67,7 +67,7 @@ semantico.py            3. tabela de símbolos (pilha de escopos), regras R1–R
 gerador.py              4. AST → C
 transpilador.py         linha de comando (--tokens --so-lexico --derivacao --ast --c --executar)
 rodar_testes.py         suíte: testes/NN.gam + .esperado.txt (+ .entrada.txt); --mostrar, --gravar
-testes/                 01–08 (válidos, erro léxico, sintático, semântico, todos os tokens, escopo)
+testes/                 01–09 (válidos, erro léxico, sintático, semântico, todos os tokens, escopo, BOM)
 gerados/                o C gerado (os .exe ficam fora do git)
 estudo/regex_igual.py   o antigo lexico.py (= × ==), para explicar o maior casamento
 docs/ESPECIFICACAO.md   Σ, tokens/ER, G=(V,T,P,S), EBNF, regras semânticas, 3 decisões (base do relatório)
@@ -101,9 +101,8 @@ Checklist completo em `docs/MAPA.md` (carregado acima): cada exigência do enunc
 - **Descartadas:** transpilador que sorteia/apaga código; emoji obrigatório na sintaxe.
 
 ## Em aberto
-- Decisões: **todas fechadas em 25/09** (MAPA §D). Resta só o roteiro da apresentação (quem apresenta o quê).
-- Integrantes do grupo (nomes); o colega do repo `gambiarra-transpiler` é um deles.
-- Rodar o código pela primeira vez (falta Python neste PC).
+- Sobrenomes de Rafael, Felipe e Gabriel; campos `[PREENCHER]` dos PDFs (livros consultados, alterações do grupo).
+- Itens 0.x do MAPA (datas, EI03 em Python), mostrar o marco ao professor, estudo do código pelo grupo, ensaio.
 
 ## Aprendizados e cuidados
 - **Notação de ER:** nos slides do professor, `+` é **união** (`(a + b)*`), mas `digit+` aparece como "um ou mais". No Python e no JFlex, união é `|` e `+` é "um ou mais". No relatório, dizer qual notação usamos.
@@ -131,7 +130,7 @@ Checklist completo em `docs/MAPA.md` (carregado acima): cada exigência do enunc
 - Demonstração de token × lexema com emojis como apelido (dois lexemas, mesmo token), se a ideia dos emojis for usada.
 
 ## Pendências
-Tudo está no `docs/MAPA.md`; marcar `[x]` lá quando o item ficar pronto e testado. Ordem agora: decisões do grupo (MAPA §D, começando pelo D1) → itens 0.x (confirmar prazos e grupo, instalar gcc no PC em uso) → Marco 1.
+Tudo está no `docs/MAPA.md`; marcar `[x]` lá quando o item ficar pronto e testado. Ordem agora: completar os `[PREENCHER]` e os sobrenomes → gerar os PDFs de novo (`python entrega/montar_entrega.py`) → itens 0.x → estudo do código e ensaio.
 
 ## Riscos / cuidados
 - **Originalidade e plágio:** o repositório do outro grupo é público e da mesma turma. Usar só como referência de formato; o professor faz perguntas individuais e pede mudanças ao vivo.
@@ -146,7 +145,7 @@ Tudo está no `docs/MAPA.md`; marcar `[x]` lá quando o item ficar pronto e test
 - **Modo aula** (pedido em 2026-09-23): o usuário pergunta sobre tudo o que vamos usar, intercalado com código. Explicar no estilo do blog (texto corrido + um exemplo que acompanha; exemplo: a BIRL-Lite do enunciado), **um conceito por mensagem**, na ordem do MAPA §1, terminando com "dúvidas?" e o nome do próximo. Léxico já foi visto (pular).
 - **À risca:** nada do que o enunciado, o aviso ou o EI03 pedem pode faltar. Antes de dar uma parte por pronta, conferir os itens do MAPA com a origem.
 - **Antes de todo commit:** pente fino no que vai ao GitHub. **Padrão de commit** ([iuricode/padroes-de-commits](https://github.com/iuricode/padroes-de-commits)): `:emoji: tipo: Descrição`, título curto (~4 palavras), detalhes no corpo, um commit por assunto. Tipos: `feat` :sparkles: · `fix` :bug: · `docs` :books: · `refactor` :recycle: · `perf` :zap: · `build` :package: · `chore` :wrench: · `style` :lipstick: · `cleanup` :broom: · `remove` :wastebasket: · `test` :test_tube: · primeiro commit `:tada: init`.
-- **Anotar TUDO o que for programado** (pedido do usuário em 2026-09-23): registrar no DEVLOG o que foi feito, por quê, como testamos (comando + saída), os erros e as correções, e a linha da tabela de uso de IA. Esse material vira o relatório, o README, o roteiro da apresentação e a declaração de IA. O estado resumido fica neste arquivo. **Checkpoint de documentação a cada 9 trocas de mensagens** (pedido do usuário em 2026-09-23): atualizar DEVLOG, APRENDIZADOS, MAPA e este arquivo, e avisar numa linha; também ao encerrar/pausar e quando ele pedir. Último checkpoint: 2026-09-25 (conceitos 9 a 13, resumo visual, seção D do MAPA; commit).
+- **Anotar TUDO o que for programado** (pedido do usuário em 2026-09-23): registrar no DEVLOG o que foi feito, por quê, como testamos (comando + saída), os erros e as correções, e a linha da tabela de uso de IA. Esse material vira o relatório, o README, o roteiro da apresentação e a declaração de IA. O estado resumido fica neste arquivo. **Checkpoint de documentação a cada 9 trocas de mensagens** (pedido do usuário em 2026-09-23): atualizar DEVLOG, APRENDIZADOS, MAPA e este arquivo, e avisar numa linha; também ao encerrar/pausar e quando ele pedir. Último checkpoint: 2026-09-25 (código, testes, entregáveis, roteiro; commit).
 - **Git (repo privado):** commits no padrão acima, com a linha `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` no fim quando o Claude ajudou (reforça a transparência no uso de IA que o professor exige). **Só entra o que é da disciplina** (pedido do usuário em 24/09); `__pycache__/` fica fora. Em geral o usuário roda `git add/commit/push`; na troca de PC (24/09) ele pediu que o Claude fizesse.
 
 ## Histórico
@@ -154,4 +153,4 @@ Tudo está no `docs/MAPA.md`; marcar `[x]` lá quando o item ficar pronto e test
 - 2026-09-24: conceitos 2 (GLC) e 3 (BNF/EBNF); dúvida sintático × semântico; "pegadinha" do Flex; troca de PC com repo privado (só o que é da disciplina). A conversa, até o pedido de commit, está em `docs/claude/conversa-2026-09-23.jsonl`.
 - 2026-09-24 (de volta ao PC antigo, sem mudanças no GitHub): conceito 3 reenviado e conceitos 4 a 8; dúvidas sobre `"("` × `(` e sobre OpRel × operadores lógicos.
 - 2026-09-25: conceitos 9 a 13 (fim do estudo), resumo visual dos conceitos, seção D (decisões do grupo) no MAPA; commit e push.
-- 2026-09-25 (pasta nova em Downloads): todas as decisões fechadas por perguntas; tema Gambiarra; código completo + testes + README + ESPECIFICACAO escritos (Python ainda não rodou).
+- 2026-09-25 (pasta nova em Downloads): todas as decisões fechadas por perguntas; tema Gambiarra; código completo + testes + README + ESPECIFICACAO; Python instalado, 10 de 10 testes; relatório e EI03 em PDF, roteiro; commit e push (clone limpo conferido).
