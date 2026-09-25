@@ -11,7 +11,8 @@ Checklist tirado linha por linha do enunciado v6 (`docs/enunciados/TP1_Linguagem
 - [ ] 0.3 Baixar o PDF anexo do TP1 e comparar com a v6.
 - [ ] 0.4 Fechar o grupo: entrega única, e todos participam do planejamento, especificação, implementação, testes, documentação e apresentação [v6 cabeçalho]. EI03: individual ou dupla.
 - [ ] 0.5 Perguntar ao professor se o EI03 pode ser em Python (o texto fala em `.flex`/Java).
-- [ ] 0.6 ⚠ Instalar um compilador C (gcc). Não havia nenhum no PC antigo (gcc, clang, tcc e cl procurados em 23/09); conferir no PC novo. Sem ele, o C gerado não roda. Faremos juntos (MSYS2 ou WinLibs).
+- [x] 0.8 Python 3.12.10 instalado (winget, 25/09). Suíte: **9 de 9 OK**. Falta revisar os itens dos Marcos 3 a 5 um a um e marcar `[x]`.
+- [x] 0.6 gcc: neste PC já existe (`C:\MinGW\bin\gcc.exe` 4.9.2); C de teste compilou com `-Wall` sem avisos (25/09). Texto original: Instalar um compilador C (gcc). Não havia nenhum no PC antigo (gcc, clang, tcc e cl procurados em 23/09); conferir no PC novo. Sem ele, o C gerado não roda. Faremos juntos (MSYS2 ou WinLibs).
 - [ ] 0.7 (opcional) EI02: formativo e sem nota; prazo 11/09 passou e o Classroom mostra "Não entregue". Ver se ainda aceita entrega. O conteúdo (ER, AFD, AFN) cai na prova.
 - [x] Enunciado completo achado e guardado · decisão: léxico e parser à mão em Python · documentação montada (23/09).
 
@@ -37,180 +38,199 @@ Reunidas aqui em 25/09 (antes estavam espalhadas nos conceitos). Cada uma tem as
 - `[ ]` aberta · `[~]` tem recomendação, falta o grupo confirmar · `[x]` decidida
 
 ### D1. A linguagem (Marco 1) → relatório: tema, objetivos e as 3 decisões próprias
-- [~] Tema: cassino (a ideia mais forte até agora).
-- [ ] Nome de cada comando e palavra-chave (tabela: palavra → significado → equivalente em C).
-- [ ] ⚠ As 3 decisões próprias de sintaxe, com justificativa (declaração, delimitador de bloco, entrada/saída, condicional ou repetição).
-- [~] Linguagem destino: C (referência do enunciado; Python exigiria justificativa e aviso ao professor no Marco 1).
-- [~] Tipos: inteiro + real; texto só como literal no comando de mostrar (conceito 11: variável de texto em C é trabalhosa).
-- [~] Repetição: while (o for é opcional).
-- [~] If e while com fechamento explícito, para evitar o "else pendurado" (conceito 5).
-- [~] Cada comando começa com a sua própria palavra-chave; o `id` sozinho só na atribuição (conceito 7).
-- [~] Operadores lógicos (E, OU, NÃO) também na gramática, e não só no léxico (conceito 3).
-- [ ] Operadores lógicos como palavras (`E`, `OU`, `NAO`) ou como símbolos (`&&`, `||`, `!`)?
-- [ ] Extensão dos arquivos (ex.: `.cassino`).
-- [ ] Vai ter aposta/sorte? Se sim, é um comando da linguagem, com `srand(semente fixa)` no C; nunca sorteio no transpilador.
+- [x] Tema: **Gambiarra** (25/09). Vocabulário tirado do repo do colega do grupo (`github.com/Gabeez11/gambiarra-transpiler`): **só as palavras**; a lógica/código de lá não é usada (usuário não confia que siga as regras).
+- [x] Palavras (25/09), todas minúsculas:
+
+  | Palavra | Significado | C |
+  |---|---|---|
+  | `gambiarra { ... }` | início e fim do programa | `int main(void) { ... }` |
+  | `remendo` | declara variável (tipo deduzido do valor) | `int` / `float` |
+  | `mostra( )` | saída | `printf` |
+  | `pega( )` | entrada | `scanf` |
+  | `se` / `senao` | if / else | `if` / `else` |
+  | `enquanto` | while | `while` |
+  | `firme` / `quebrado` | verdadeiro / falso | `1` / `0` |
+  | `{ } ( ) ;` | bloco, agrupamento, fim de comando | iguais |
+  | `+ - * / %` · `== != > >= < <=` · `&& \|\| !` | operadores | iguais |
+  | `//` | comentário de linha | — |
+- [x] ⚠ As 3 decisões próprias (25/09), justificativas em `docs/ESPECIFICACAO.md` §1: (1) declaração `remendo` sem tipo escrito, tipo deduzido do valor; (2) blocos com `{ }` no lugar de palavra de fechamento; (3) `mostra(a, b, ...)` com vários itens e quebra de linha automática.
+- [x] Linguagem destino: **C** (25/09). gcc 4.9.2 (TDM/MinGW) já instalado neste PC.
+- [x] Tipos: **inteiro, real e lógico** (25/09); texto só como literal no `mostra`. O lógico veio de `firme`/`quebrado`.
+- [x] Declaração: `remendo x = 10;` — **tipo deduzido do valor inicial**, valor obrigatório, tipo fixo depois (tipagem estática) (25/09).
+- [x] `%` entra, **só entre inteiros**, mesmo andar de `*` e `/` (25/09).
+- [x] Repetição: só `enquanto` (while).
+- [x] Blocos com `{ }` obrigatórios no `se`/`senao`/`enquanto` = fechamento explícito, sem "else pendurado".
+- [x] Cada comando começa com a sua própria palavra-chave; o `id` sozinho só na atribuição.
+- [x] Operadores lógicos na gramática, como **símbolos** `&& || !` (vocabulário do colega).
+- [x] Extensão dos arquivos: `.gam` (25/09).
+- [x] Aposta/sorte: **não** (25/09).
+- [x] Colega do repo é do grupo (25/09). Nomes dos integrantes: a preencher.
 - [ ] (extra) Emojis só na tela do editor? Testar antes.
 
 ### D2. Léxico (Marco 2 e EI03) → relatório: alfabeto Σ e tabela de tokens
-- [ ] Alfabeto Σ: quais caracteres a linguagem aceita (letras com ou sem acento, `_`, dígitos, aspas, operadores).
-- [ ] Identificador: a regra (ex.: `[a-zA-Z_][a-zA-Z0-9_]*`); aceita acento? diferencia maiúscula de minúscula?
-- [ ] Palavras reservadas em MAIÚSCULAS (como a BIRL-Lite) ou minúsculas?
-- [ ] Número real: formato (`10.5`; aceita `.5` e `5.`?). O EI03 pede no máximo um ponto (`3.4.5` = erro).
-- [ ] Texto: aspas duplas, sem quebra de linha; quais escapes valem (`\n`)?
-- [ ] ⚠ Comentários: o símbolo de linha E o de bloco (o EI03 exige os dois).
-- [ ] Nome de cada token (ex.: `ABRE_PAREN`, `MAIS`, `IGUAL`, `ATRIB`), em vez de `['(', '(']`.
-- [~] Notação das ER no relatório: EBNF ou JFlex, dizendo que `|` é união (nos slides aparece `+`).
-- [~] Erro léxico: reporta (linha, coluna, lexema) e continua; no fim, se houve erro, para antes do parser.
-- [~] Reservada × identificador: casar como identificador e consultar a tabela de reservadas.
-- [~] Maior casamento pela ordem das regras (os operadores longos antes dos curtos).
+- [x] Alfabeto Σ: letras sem acento, dígitos, `_`, espaço/tab/quebra de linha e `" . , ; ( ) { } + - * / % = ! < > & |`; dentro de texto e comentário vale qualquer caractere (25/09).
+- [x] Identificador: `[a-zA-Z_][a-zA-Z0-9_]*`, sem acento, **diferencia maiúscula de minúscula** (25/09).
+- [x] Palavras reservadas em **minúsculas** (vocabulário do colega).
+- [x] Real: só `[0-9]+\.[0-9]+` (`10.5`). `.5`, `5.`, `3.4.5` e `2abc` = erro léxico (25/09).
+- [x] Texto: aspas duplas, sem quebra de linha; escapes `\n \t \" \\` (iguais aos do C); outro escape = erro léxico; aspas sem fechar = erro léxico (25/09).
+- [x] Comentários: `//` (linha) e `/* ... */` (bloco); bloco sem fechar = erro léxico (25/09).
+- [x] Nome de cada token definido no código (`MAIS`, `IGUAL_IGUAL`, `ATRIB`...), em vez de `['(', '(']`.
+- [x] Notação das ER no relatório: estilo JFlex/Python (`|` = união).
+- [x] Erro léxico: reporta (linha, coluna, lexema) e continua; no fim, se houve erro, para antes do parser.
+- [x] Reservada × identificador: casa como identificador e consulta a tabela de reservadas.
+- [x] Maior casamento: operadores longos antes dos curtos.
 
 ### D3. Gramática e parser (Marcos 2 e 4) → relatório: G = (V, T, P, S) e BNF/EBNF
-- [~] EBNF no relatório (como o enunciado), com V, T, P e S escritos explicitamente.
-- [ ] Condição do if/while: só uma comparação (como a BIRL-Lite) ou expressão lógica completa, com E/OU/NÃO?
-- [ ] Onde fica o NÃO na precedência: abaixo das comparações (como no Python) ou acima de tudo (como no C)?
-- [ ] Declaração em qualquer lugar do bloco (como a BIRL-Lite) ou só no começo?
-- [ ] Comando de mostrar: um item só (como a BIRL-Lite) ou vários separados por vírgula?
-- [~] Erro sintático: para no primeiro, com linha, coluna, encontrado e esperado; `;` esquecido apontado no token anterior.
-- [~] Opções de saída para a demo e o relatório: tokens, árvore de derivação e AST.
+- [x] EBNF no relatório, com V, T, P e S explícitos.
+- [x] Condição do `se`/`enquanto`: expressão completa, com `&& || !` (25/09).
+- [x] Precedência (do mais fraco ao mais forte): `||` < `&&` < relacionais < `+ -` < `* / %` < unários (`!`, `-`) < fator. **`!` como no C** (25/09).
+- [x] Menos unário (`-5`, `-x`) entra (25/09).
+- [x] Declaração (`remendo`) em qualquer lugar do bloco (25/09).
+- [x] `mostra(a, b, ...)`: vários itens separados por vírgula (texto ou expressão) (25/09).
+- [x] Erro sintático: para no primeiro, com linha, coluna, encontrado e esperado; `;` esquecido apontado no token anterior.
+- [x] Opções de saída: `--tokens`, `--derivacao`, `--ast` (25/09).
 
 ### D4. Semântica (Marco 5) → relatório: "regras semânticas adotadas" [v6 §9]
-Rascunho das regras, para o grupo confirmar:
-- [~] R1: uma variável só pode ser usada depois de declarada.
-- [~] R2: não pode declarar duas vezes no mesmo escopo.
-- [~] R3: escopo por bloco (if, senão e while têm o seu); ao sair do bloco, as variáveis dele somem.
-- [ ] R4: sombreamento (declarar num bloco um nome que já existe fora): permitido, como no C, ou proibido?
-- [~] R5: contas entre inteiros dão inteiro; se um lado é real, o resultado é real (promoção).
-- [~] R6: comparações só entre números, e o resultado é lógico; texto não entra em conta nem em comparação.
-- [~] R7: guardar valor: inteiro ← inteiro ✅, real ← inteiro ✅ (vira real), inteiro ← real ❌.
-- [ ] R8: divisão inteira como no C (`7 / 2 = 3`) ou `/` sempre dá real?
-- [~] R9: na declaração, o valor é conferido antes de o nome existir (`MONSTRO x = x + 1;` é erro).
-- [ ] R10: a condição do if/while tem que ser lógica (só é preciso se a gramática aceitar qualquer expressão como condição, ver D3).
-- [ ] R11: o comando de ler só aceita variável numérica já declarada?
-- [~] Erro semântico: para no primeiro e nunca gera C (ou lista todos; decidir).
+- [x] R1: variável só pode ser usada depois de declarada.
+- [x] R2: não pode declarar duas vezes no mesmo escopo.
+- [x] R3: escopo por bloco (`se`, `senao` e `enquanto` têm o seu).
+- [x] R4: sombreamento **permitido**, como no C (25/09).
+- [x] R5: inteiro op inteiro = inteiro; com um real, dá real (promoção). `%` só entre inteiros. Lógico não entra em conta.
+- [x] R6: relacionais só entre números e dão lógico; `==`/`!=` também entre dois lógicos. `&& || !` só com lógicos.
+- [x] R7: atribuir: inteiro ← inteiro ✅, real ← inteiro ✅, real ← real ✅, lógico ← lógico ✅; inteiro ← real ❌; número ↔ lógico ❌.
+- [x] R8: `7 / 2 = 3` (divisão inteira, como no C) (25/09).
+- [x] R9: na declaração, o valor é conferido antes de o nome existir (`remendo x = x + 1;` é erro).
+- [x] R10: condição do `se`/`enquanto` tem que ser **lógica** (25/09).
+- [x] R11: `pega` só aceita variável inteira ou real já declarada (25/09).
+- [x] R12 (nova, vem da declaração sem tipo): a variável fica com o tipo do valor inicial, e ele não muda.
+- [x] Erros semânticos: **lista todos** e não gera C (25/09).
 
 ### D5. Geração de C (Marco 5)
-- [~] Real vira `float`, e não `double` (com `double` o `scanf` exige `%lf`).
-- [ ] Formato do real na saída: `%f` (`10.500000`) ou `%g` (`10.5`)?
-- [ ] Mostrar um número pula linha sozinho (como o `printf("%d\n")` do enunciado)? E um texto só pula se tiver `\n`?
-- [~] Prefixo `v_` em todas as variáveis do C (uma variável chamada `int` ou `printf` não quebra).
-- [~] Parênteses em toda operação, menos na expressão inteira.
-- [~] Texto com `printf("%s", ...)` (um `%` no texto não vira formato).
-- [ ] Onde salvar o C (ex.: `gerados/<nome>.c`) e se haverá uma opção que já chama o gcc e roda.
+- [x] inteiro → `int`, real → `float` (`scanf %f`), lógico → `int` 0/1.
+- [x] Real na saída com `%g` (`10.5`) (25/09).
+- [x] Cada `mostra` pula linha no fim (25/09).
+- [x] Lógico impresso como `firme`/`quebrado` (25/09).
+- [x] Prefixo `v_` nas variáveis do C.
+- [x] Parênteses em toda operação.
+- [x] Texto com `printf("%s", ...)`.
+- [x] C salvo em `gerados/<nome>.c`; `--executar` chama o gcc e roda (25/09).
 
 ### D6. Projeto e entrega
-- [ ] Nomes dos arquivos do código (ex.: `lexico.py`, `parser.py`, `semantico.py`, `gerador.py`, `transpilador.py`) e das pastas (`testes/`, `gerados/`).
-- [ ] Formato dos testes (ex.: `01_valido_basico.cassino` + `01_valido_basico.esperado.txt`) e um script que roda todos.
-- [ ] Roteiro da apresentação: quem apresenta o quê.
+- [x] Um arquivo por estação: `erros.py`, `tokens.py`, `lexico.py`, `ast_nos.py`, `parser.py`, `semantico.py`, `gerador.py`, `transpilador.py`; pastas `testes/`, `gerados/` (25/09).
+- [x] Testes: `testes/NN_nome.gam` + `NN_nome.esperado.txt`; `python rodar_testes.py` roda todos, compila o C e compara (25/09).
+- [x] O `lexico.py` antigo (regex `=` × `==`) vai para `estudo/regex_igual.py` (25/09).
+- [x] Extensão `.gam` (25/09).
+- [x] Roteiro da apresentação: `docs/ROTEIRO_APRESENTACAO.md` (25/09).
 
 ## 2. Marco 1 — Tema e decisões (sugestão: até 25/09) [v6 §13]
-- [ ] Tema, e uma linguagem "pequena, coerente e executável" [v6 §1]. Ideia: cassino. **Todas as escolhas deste marco estão em §D1.**
-- [ ] Tabela de comandos: palavra da linguagem → significado → equivalente em C
-- [ ] ⚠ 3 decisões próprias de sintaxe, justificadas (declaração, delimitador de bloco, entrada/saída, condicional ou repetição). Não pode ser a BIRL-Lite com as palavras trocadas [v6 originalidade]
+- [x] Tema, e uma linguagem "pequena, coerente e executável" [v6 §1]. **Gambiarra** (25/09). **Todas as escolhas deste marco estão em §D1.**
+- [x] Tabela de comandos: palavra da linguagem → significado → equivalente em C
+- [x] ⚠ 3 decisões próprias de sintaxe, justificadas (declaração, delimitador de bloco, entrada/saída, condicional ou repetição). Não pode ser a BIRL-Lite com as palavras trocadas [v6 originalidade]
   - Dicas dos conceitos 5 e 7: if/while com **fechamento explícito** evita o "else pendurado"; **cada comando começando com sua própria palavra-chave** (o `id` sozinho só na atribuição) deixa o parser LL(1) simples.
-- [ ] Linguagem destino: C (referência). Outra linguagem só com justificativa técnica e avisando o professor neste marco [v6 §1]
-- [ ] Exemplos preliminares: 2 ou 3 programas na linguagem nova [v6 §13]
-- [ ] Extensão dos arquivos (ex.: `.cassino`)
+- [x] Linguagem destino: C (referência). Outra linguagem só com justificativa técnica e avisando o professor neste marco [v6 §1]
+- [x] Exemplos preliminares: 2 ou 3 programas na linguagem nova [v6 §13]
+- [x] Extensão dos arquivos → `.gam`
 - [ ] Mostrar o marco ao professor: os marcos servem para revisão, e ele pode pedir mudança de sintaxe antes da implementação [v6 §13]
 
 ### Escopo mínimo (conferir no desenho da linguagem) [v6 §1]
-- [ ] 2+ tipos primitivos, pelo menos 1 numérico (ex.: inteiro e real)
-- [ ] Declaração de variáveis e atribuição
-- [ ] `+ - * /` com precedência e parênteses
-- [ ] Operadores relacionais para expressões lógicas (`== != > >= < <=`)
-- [ ] Decisão com alternativa (if/else)
-- [ ] Repetição controlada por expressão lógica (while ou for)
-- [ ] Entrada e saída de dados
-- [ ] Início/fim do programa e dos blocos bem marcados
-- [ ] Operadores lógicos (E, OU, NÃO): o léxico precisa reconhecer [EI03 P1d]; decidir se a gramática também usa (recomendado: sim, com andares de precedência OU < E < NÃO < relacionais; decidir onde fica o NÃO)
+- [x] 2+ tipos primitivos, pelo menos 1 numérico (ex.: inteiro e real)
+- [x] Declaração de variáveis e atribuição
+- [x] `+ - * /` com precedência e parênteses
+- [x] Operadores relacionais para expressões lógicas (`== != > >= < <=`)
+- [x] Decisão com alternativa (if/else)
+- [x] Repetição controlada por expressão lógica (while ou for)
+- [x] Entrada e saída de dados
+- [x] Início/fim do programa e dos blocos bem marcados
+- [x] Operadores lógicos (E, OU, NÃO): o léxico precisa reconhecer [EI03 P1d]; decidir se a gramática também usa (recomendado: sim, com andares de precedência OU < E < NÃO < relacionais; decidir onde fica o NÃO)
 
 ## 3. Marco 2 — Especificação: tokens e gramática (até 28/09) — léxico 2 pts · gramática 2,5 pts
 ### Léxico [v6 §2, EI03 P1]
-- [ ] Alfabeto Σ, ligado a alfabeto, palavra e linguagem regular (Menezes, 2011)
-- [ ] Tabela de tokens: categoria · ER/padrão · exemplo de lexema · descrição
-- [ ] ER justificadas, em notação formal (EBNF ou JFlex), dizendo qual notação usamos (nos slides, `+` = união) [EI03 P1]
-- [ ] Palavras reservadas [EI03 P1a]
-- [ ] Identificadores, com regra estrita [EI03 P1b]
-- [ ] Inteiros e reais (no máximo 1 ponto decimal) [EI03 P1c]
-- [ ] Textos (strings) entre aspas [v6 §2]
-- [ ] Operadores aritméticos, relacionais e lógicos [EI03 P1d]
-- [ ] Atribuição, delimitadores e pontuação [EI03 P1e]
-- [ ] Espaços, quebras de linha ⚠ e comentários de linha E de bloco [EI03 P1f]
-- [ ] (opcional) AFD de 1 ou 2 tokens (identificador, número real), ligando o léxico à Aula 3
+- [x] Alfabeto Σ, ligado a alfabeto, palavra e linguagem regular (Menezes, 2011)
+- [x] Tabela de tokens: categoria · ER/padrão · exemplo de lexema · descrição
+- [x] ER justificadas, em notação formal (EBNF ou JFlex), dizendo qual notação usamos (nos slides, `+` = união) [EI03 P1]
+- [x] Palavras reservadas [EI03 P1a]
+- [x] Identificadores, com regra estrita [EI03 P1b]
+- [x] Inteiros e reais (no máximo 1 ponto decimal) [EI03 P1c]
+- [x] Textos (strings) entre aspas [v6 §2]
+- [x] Operadores aritméticos, relacionais e lógicos [EI03 P1d]
+- [x] Atribuição, delimitadores e pontuação [EI03 P1e]
+- [x] Espaços, quebras de linha ⚠ e comentários de linha E de bloco [EI03 P1f]
+- [x] (opcional) AFD de 1 ou 2 tokens (identificador, número real), ligando o léxico à Aula 3
 ### Gramática [v6 §3]
-- [ ] G = (V, T, P, S) com V, T, P e S escritos explicitamente
-- [ ] Produções em BNF/EBNF para todas as estruturas do escopo mínimo
-- [ ] Expressões sem ambiguidade, com precedência (Expressao → Termo → Fator) e parênteses
-- [ ] Sem recursão à esquerda (descida recursiva)
-- [ ] ⚠ A gramática tem que ser IGUAL à implementada: revisar no fim se o código mudou [v6 §3]
-- [ ] Árvore de derivação de um exemplo (ex.: `2 + 3 * 4`) para o relatório [aviso: "com árvore de derivação"]
+- [x] G = (V, T, P, S) com V, T, P e S escritos explicitamente
+- [x] Produções em BNF/EBNF para todas as estruturas do escopo mínimo
+- [x] Expressões sem ambiguidade, com precedência (Expressao → Termo → Fator) e parênteses
+- [x] Sem recursão à esquerda (descida recursiva)
+- [x] ⚠ A gramática tem que ser IGUAL à implementada: revisar no fim se o código mudou [v6 §3]
+- [x] Árvore de derivação de um exemplo (ex.: `2 + 3 * 4`) para o relatório [aviso: "com árvore de derivação"]
 
 ## 4. Marco 3 — Analisador léxico = EI03 (código até 01/10; EI03 até 09/10, 19:20, sem atraso)
 - [x] Criar repositório git + `.gitignore` → adiantado em 24/09 (troca de PC): repo PRIVADO com o que é da disciplina, inclusive `CLAUDE.md` e `docs/`; push conferido com um clone.
-- [ ] Lê o programa de um arquivo de texto [EI03 P3a]
-- [ ] Gera a sequência de tokens (classe + lexema, com linha e coluna) na tela ou em arquivo [EI03 P3b]
-- [ ] Palavra reservada × identificador (tabela de reservadas) [EI03 P2a]
-- [ ] Maior casamento: `==` antes de `=`, `>=` antes de `>` etc. [v6 §2, EI03 P2b]
-- [ ] Controle de linha e coluna [EI03 P2c]
-- [ ] Ignora espaços, quebras de linha e comentários [v6 §2]
-- [ ] ⚠ Erro léxico com linha, coluna e lexema, e CONTINUA lendo [EI03 P3c, v6 §7]
-- [ ] ⚠ Erro para `@`, identificador começando com dígito (`2abc`), número malformado (`3.4.5`), texto sem fechar aspas e comentário de bloco sem fechar [EI03 P4b]
-- [ ] Teste válido cobrindo TODOS os tipos de token [EI03 P4a]
-- [ ] Teste com erros léxicos propositais [EI03 P4b]
-- [ ] Guardar a saída de cada teste (print ou listagem) para o relatório
+- [x] Lê o programa de um arquivo de texto [EI03 P3a]
+- [x] Gera a sequência de tokens (classe + lexema, com linha e coluna) na tela ou em arquivo [EI03 P3b]
+- [x] Palavra reservada × identificador (tabela de reservadas) [EI03 P2a]
+- [x] Maior casamento: `==` antes de `=`, `>=` antes de `>` etc. [v6 §2, EI03 P2b]
+- [x] Controle de linha e coluna [EI03 P2c]
+- [x] Ignora espaços, quebras de linha e comentários [v6 §2]
+- [x] ⚠ Erro léxico com linha, coluna e lexema, e CONTINUA lendo [EI03 P3c, v6 §7]
+- [x] ⚠ Erro para `@`, identificador começando com dígito (`2abc`), número malformado (`3.4.5`), texto sem fechar aspas e comentário de bloco sem fechar [EI03 P4b]
+- [x] Teste válido cobrindo TODOS os tipos de token [EI03 P4a]
+- [x] Teste com erros léxicos propositais [EI03 P4b]
+- [x] Guardar a saída de cada teste (print ou listagem) para o relatório
 ### Entrega do EI03: `EI03_NomeCompleto.zip` (ou nomes da dupla)
-- [ ] PDF: nome completo, disciplina (GRP00543), professor, título "Estudo Independente 03"
-- [ ] P1 ER justificadas · P2 conflitos explicados com a teoria · P3 código · P4 testes com evidências (prints ou listagem)
-- [ ] Referências: Menezes cap. 3 (3.1, 3.4, 3.6), Aho cap. 3, Price e Toscani cap. 2.2, Plano de Ensino
-- [ ] ⚠ Declaração de IA: ferramenta, finalidade, etapas, como verificamos as ER, fontes usadas para validar, o que o aluno alterou
-- [ ] Zip com: PDF + código + arquivos de teste (entrada e saída)
-- [ ] Conferir: o zip abre, tem tudo, o PDF está legível e com o nome
+- [~] PDF: nome completo, disciplina (GRP00543), professor, título "Estudo Independente 03" → pronto em `entrega/`, falta completar os campos [PREENCHER] (livros consultados, alterações do grupo, sobrenomes)
+- [x] P1 ER justificadas · P2 conflitos explicados com a teoria · P3 código · P4 testes com evidências (prints ou listagem)
+- [x] Referências: Menezes cap. 3 (3.1, 3.4, 3.6), Aho cap. 3, Price e Toscani cap. 2.2, Plano de Ensino
+- [~] ⚠ Declaração de IA: ferramenta, finalidade, etapas, como verificamos as ER, fontes usadas para validar, o que o aluno alterou → pronto em `entrega/`, falta completar os campos [PREENCHER] (livros consultados, alterações do grupo, sobrenomes)
+- [x] Zip com: PDF + código + arquivos de teste (entrada e saída)
+- [x] Conferir: o zip abre, tem tudo, o PDF está legível e com o nome
 
 ## 5. Marco 4 — Parser + AST (até 04/10) — léxico + parser + AST: 3 pts [v6 §4]
-- [ ] Parser por descida recursiva: uma função por regra da gramática
-- [ ] Monta a AST
-- [ ] ⚠ Precedência na própria AST: `2 + 3 * 4` → `2 + (3 * 4)`, e `(2 + 3) * 4` respeitado. O gerador não "conserta" nada [v6 precedência]
-- [ ] Opção para mostrar a AST na tela (demo e relatório)
-- [ ] ⚠ Erro sintático PARA o processamento e mostra linha, token encontrado e o que era esperado [v6 §4, §7]
+- [x] Parser por descida recursiva: uma função por regra da gramática
+- [x] Monta a AST
+- [x] ⚠ Precedência na própria AST: `2 + 3 * 4` → `2 + (3 * 4)`, e `(2 + 3) * 4` respeitado. O gerador não "conserta" nada [v6 precedência]
+- [x] Opção para mostrar a AST na tela (demo e relatório)
+- [x] ⚠ Erro sintático PARA o processamento e mostra linha, token encontrado e o que era esperado [v6 §4, §7]
   - Tokens com linha e coluna; classes de erro próprias (`ErroLexico`, `ErroSintatico`, `ErroSemantico`); `;` esquecido apontado na linha do token anterior.
-- [ ] Opção para mostrar a **árvore de derivação** (as chamadas das funções do parser, indentadas). Cobre ao pé da letra o "analisador sintático funcionando, com árvore de derivação" do [aviso]
-- [ ] Nós da AST guardam a **linha**, para os erros semânticos poderem dizer onde estão
+- [x] Opção para mostrar a **árvore de derivação** (as chamadas das funções do parser, indentadas). Cobre ao pé da letra o "analisador sintático funcionando, com árvore de derivação" do [aviso]
+- [x] Nós da AST guardam a **linha**, para os erros semânticos poderem dizer onde estão
 - [ ] Todos sabem dizer qual produção reconhece cada estrutura [v6 §4]
 
 ## 6. Marco 5 — Semântica, geração de C, testes e relatório (até 07/10)
 ### Semântica — 2 pts [v6 §5]
-- [ ] ⚠ Separada do parser, no código e na explicação
-- [ ] Tabela de símbolos com nome e tipo
-- [ ] Erro: variável usada antes de ser declarada
-- [ ] Erro: variável declarada duas vezes no mesmo escopo
-- [ ] Erro: tipos incompatíveis em atribuições e operações (escrever as regras: real recebe inteiro? inteiro recebe real? texto em conta?)
-- [ ] Mensagem clara: nome da variável + regra violada [v6 §7]
-- [ ] Decidir e documentar os escopos (o critério da nota cita "escopo") [v6 §12]
+- [x] ⚠ Separada do parser, no código e na explicação
+- [x] Tabela de símbolos com nome e tipo
+- [x] Erro: variável usada antes de ser declarada
+- [x] Erro: variável declarada duas vezes no mesmo escopo
+- [x] Erro: tipos incompatíveis em atribuições e operações (escrever as regras: real recebe inteiro? inteiro recebe real? texto em conta?)
+- [x] Mensagem clara: nome da variável + regra violada [v6 §7]
+- [x] Decidir e documentar os escopos (o critério da nota cita "escopo") [v6 §12]
 ### Geração de código — 3 pts [v6 §6]
-- [ ] Só roda se léxico, sintaxe e semântica passarem
-- [ ] Percorre a AST (troca de texto não vale)
-- [ ] Tipos e declarações mapeados de forma consistente (ex.: inteiro → `int`, real → `float`/`double`)
-- [ ] if/else, laço, expressões, entrada (`scanf`) e saída (`printf`) gerados dos nós da AST, com o formato certo (`%d`, `%f`)
-- [ ] ⚠ O C gerado compila no gcc sem erro e se comporta igual ao programa de entrada
-- [ ] Roda com qualquer arquivo (`python transpilador.py arquivo`), porque o professor pode pedir teste novo na hora [v6 §11]
-- [ ] (se houver aposta/sorte) `srand` com semente fixa
+- [x] Só roda se léxico, sintaxe e semântica passarem
+- [x] Percorre a AST (troca de texto não vale)
+- [x] Tipos e declarações mapeados de forma consistente (ex.: inteiro → `int`, real → `float`/`double`)
+- [x] if/else, laço, expressões, entrada (`scanf`) e saída (`printf`) gerados dos nós da AST, com o formato certo (`%d`, `%f`)
+- [x] ⚠ O C gerado compila no gcc sem erro e se comporta igual ao programa de entrada
+- [x] Roda com qualquer arquivo (`python transpilador.py arquivo`), porque o professor pode pedir teste novo na hora [v6 §11]
+- [x] (se houver aposta/sorte) `srand` com semente fixa → não se aplica (sem aposta)
 ### Suíte de testes — 2,5 pts [v6 §8]
-- [ ] `01_valido_basico`: declaração, atribuição e saída
-- [ ] `02_valido_completo`: if/else, laço, entrada/saída ⚠ e precedência (`2 + 3 * 4` ou `(2 + 3) * 4`) [v6 §8, aviso]. Sugestão: também `10 - 3 - 2` (associatividade, dá 5)
-- [ ] `03_erro_lexico`: símbolo ou lexema inválido
-- [ ] `04_erro_sintatico`: estrutura que viola a GLC (o parser para no 1º erro, então é um erro por arquivo; pode ter `04a`, `04b`…)
-- [ ] `05_erro_semantico`: uso sem declarar, redeclaração ou tipos incompatíveis
-- [ ] Nos inválidos, aparece a mensagem de erro do PRÓPRIO transpilador
-- [ ] Saída esperada de cada teste + um comando que roda todos
-- [ ] Os `.c` gerados dos testes válidos, guardados (são entregáveis) [v6 §9]
+- [x] `01_valido_basico`: declaração, atribuição e saída
+- [x] `02_valido_completo`: if/else, laço, entrada/saída ⚠ e precedência (`2 + 3 * 4` ou `(2 + 3) * 4`) [v6 §8, aviso]. Sugestão: também `10 - 3 - 2` (associatividade, dá 5)
+- [x] `03_erro_lexico`: símbolo ou lexema inválido
+- [x] `04_erro_sintatico`: estrutura que viola a GLC (o parser para no 1º erro, então é um erro por arquivo; pode ter `04a`, `04b`…)
+- [x] `05_erro_semantico`: uso sem declarar, redeclaração ou tipos incompatíveis
+- [x] Nos inválidos, aparece a mensagem de erro do PRÓPRIO transpilador
+- [x] Saída esperada de cada teste + um comando que roda todos
+- [x] Os `.c` gerados dos testes válidos, guardados (são entregáveis) [v6 §9]
 ### Relatório técnico (PDF) [v6 §9, §10, aviso]
-- [ ] Tema e objetivos
-- [ ] ⚠ As 3 decisões próprias, justificadas
-- [ ] Alfabeto Σ + tabela de tokens/ER
-- [ ] G = (V, T, P, S) + gramática BNF/EBNF completa
-- [ ] Regras semânticas adotadas (rascunho R1 a R11 em §D4)
-- [ ] ⚠ Ferramentas de IA usadas e para quê
+- [x] Tema e objetivos
+- [x] ⚠ As 3 decisões próprias, justificadas
+- [x] Alfabeto Σ + tabela de tokens/ER
+- [x] G = (V, T, P, S) + gramática BNF/EBNF completa
+- [x] Regras semânticas adotadas (rascunho R1 a R11 em §D4)
+- [~] ⚠ Ferramentas de IA usadas e para quê → pronto em `entrega/`, falta completar os campos [PREENCHER] (livros consultados, alterações do grupo, sobrenomes)
 ### README [v6 §9]
-- [ ] Pré-requisitos (Python, gcc), como compilar/rodar, exemplo de uso
+- [x] Pré-requisitos (Python, gcc), como compilar/rodar, exemplo de uso
 - [ ] Código organizado; testar do zero numa pasta limpa
 
 ## 7. Apresentação e defesa — 15 pts (ensaio 08/10; data real no item 0.1) [v6 §11, §12]
@@ -219,7 +239,7 @@ Rascunho das regras, para o grupo confirmar:
 - [ ] Demo ao vivo: arquivo → tokens → AST → C → gcc → execução (3)
 - [ ] Demo dos casos válidos e dos erros léxico, sintático e semântico (2)
 - [ ] ⚠ Arguição individual: todos explicam tokens, produções, AST, semântica e geração (3). O que ninguém souber explicar conta como não demonstrado [v6 §10]
-- [ ] Participação de todos (2): roteiro de quem fala o quê
+- [x] Participação de todos (2): roteiro de quem fala o quê → `docs/ROTEIRO_APRESENTACAO.md` (25/09)
 - [ ] Ensaiar pedidos ao vivo: novo teste, explicar uma produção, analisar a AST, corrigir um erro, pequena mudança no código (ex.: novo operador `%`, trocar uma palavra-chave)
 - [ ] Testar no computador da sala (Python, gcc, fonte grande no terminal)
 

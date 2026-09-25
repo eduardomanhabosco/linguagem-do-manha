@@ -1,0 +1,148 @@
+
+Conceito 1: do código ao programa rodando
+  
+  1 lexico : transofrma em token
+2 parser: a ordem está correta? (gera uma árvore com a estrutura do programa, chamada AST)
+3 semantica: isso faz sentido? 
+	(Anota cada variável numa tabela de símbolos )
+4 geração do codigo 
+
+
+
+
+● Conceito 2: Gramática livre de contexto, G = (V, T, P, S)
+
+  O léxico responde quais palavras existem. Falta dizer como elas podem se combinar. Em português, uma regra seria algo como "frase → sujeito verbo complemento". O conjunto dessas regras é a gramática.
+  
+  
+  A (certo): MONSTRO x = 5;  CE_QUER_VER (x);
+  B (erro):  MONSTRO x = 5;  CE_QUER_VER (y);    ← y nunca foi declarada
+  Nos dois casos, o parser recebe:
+  MONSTRO id = num ; CE_QUER_VER ( id ) ;
+  As duas sequências são idênticas. Se o parser recebe exatamente a mesma coisa, ele dá a mesma resposta, "está certo", para os dois. O nome y vai de carona dentro do token e o parser não olha para ele. Quem
+  olha os nomes é a semântica.
+
+
+
+é tipo fechar um json...
+ concluir um sentido
+ 
+ 
+  ┌────────────────────────────────┬──────────────────────────────────────────────┬───────────────────────────────────────────────┐
+  │            Estação             │                   Consegue                   │ Não consegue, e por isso passa para a próxima │
+  ├────────────────────────────────┼──────────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Léxico (ER, Tipo 3)            │ reconhecer palavras soltas: MONSTRO, 42, ==  │ contar parênteses aninhados                   │
+  ├────────────────────────────────┼──────────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Parser (GLC, Tipo 2)           │ conferir a forma: ordem e aninhamento, ((2)) │ lembrar nomes: "o y foi declarado?"           │
+  ├────────────────────────────────┼──────────────────────────────────────────────┼───────────────────────────────────────────────┤
+  │ Semântica (tabela de símbolos) │ declaração e tipos                           │ —                                             │
+  └────────────────────────────────┴──────────────────────────────────────────────┴───────────────────────────────────────────────┘
+
+
+
+  Extra para a arguição: a teoria confirma isso. "Declarar antes de usar" não é livre de contexto. Ele funciona como a linguagem {w c w}: a mesma palavra aparece duas vezes, com qualquer coisa no meio (declara
+  saldo … usa saldo). Nenhuma GLC gera essa linguagem. O livro do Aho, que está na bibliografia da disciplina, usa esse exemplo no cap. 4. Pela minha memória é a seção 4.3.5 da 2ª edição; não consegui
+  confirmar o número online, então confira no livro antes de citar.
+
+
+
+ 
+● Conceito 2: Gramática livre de contexto (GLC)
+
+  O léxico só sabe olhar uma palavra de cada vez. Ele não sabe se HORA_DO_SHOW vem antes de BIRL, nem se um parêntese que abriu foi fechado. Quem
+  confere a ordem é a gramática. Ela é uma lista de regras que diz como os tokens podem se combinar.
+
+
+  A expressão regular (ER) do léxico não consegue contar. Ela não garante que cada ( tenha um ), porque isso exige lembrar quantos parênteses
+  ficaram abertos. A GLC consegue, porque uma variável pode ficar no meio da regra:
+  Expressao → ( Expressao ),
+
+Conceito 2: Gramática Livre de Contexto (GLC)
+
+  O léxico entrega uma fila de tokens, por exemplo MONSTRO id = num ;. Ele não sabe se essa fila está numa ordem que faz
+  sentido. Quem confere isso é o parser, e ele precisa de um "livro de regras" que diga quais sequências de tokens são
+  programas válidos. Esse livro de regras é a gramática livre de contexto.
+
+
+
+  ┌────────┬────────────┬───────────────┬───────────────────────┐
+  │ Nível  │  Alfabeto  │  Ferramenta   │    Tipo (Chomsky)     │
+  ├────────┼────────────┼───────────────┼───────────────────────┤
+  │ Léxico │ caracteres │ ER / autômato │ 3 (regular)           │
+  ├────────┼────────────┼───────────────┼───────────────────────┤
+  │ Parser │ tokens     │ GLC           │ 2 (livre de contexto) │
+  └────────┴────────────┴───────────────┴───────────────────────┘
+
+  As 4 peças
+
+  V (variáveis) são as palavras "em construção". Ainda não são o resultado final e precisam ser trocadas por outra coisa.
+  - No exemplo: Frase, Sujeito, Verbo.
+  - Na BIRL-Lite: Programa, Bloco, Comando, Expressao.
+  - Chamei de "moldes" porque cada uma é uma forma que espera ser preenchida.
+
+  T (terminais) são as palavras de verdade, que não trocam mais. São o que aparece escrito no programa. O nome vem de "terminal": a troca termina
+  ali.
+  - No exemplo: o gato, o cão, dorme, corre.
+  - Na BIRL-Lite: HORA_DO_SHOW, BIRL, id, num, +, ;. São os tokens do léxico.
+
+  P (produções) são as regras de troca. A seta significa "pode ser trocado por".
+  - No exemplo: Frase → Sujeito Verbo.
+  - Na BIRL-Lite: Programa → HORA_DO_SHOW Bloco BIRL, que se lê "um programa pode ser trocado por: a palavra de início, um bloco e a palavra de
+    fim".
+
+  S (símbolo inicial) é por onde o jogo começa. É o primeiro molde que você troca.
+  - No exemplo: Frase.
+  - Na BIRL-Lite: Programa. Todo programa começa sendo só "um Programa" e vai sendo trocado até virar o código completo.
+
+
+  - V (variáveis ou não terminais): os "conceitos" que ainda vão ser trocados por outra coisa: { Programa, Bloco,
+    Comando, Expressao }.
+  - T (terminais): os tokens que vêm do léxico e não se trocam mais: { HORA_DO_SHOW, BIRL, CE_QUER_VER, (, ), ;, num, id
+    }.
+  - P (produções): as regras A → ..., que dizem "A pode virar isto". O | quer dizer "ou" e o ε quer dizer "vazio".
+  - S (símbolo inicial): o ponto de partida. Aqui é Programa.
+
+
+
+
+v variavel
+t terminal
+p prouções
+s inicio 
+
+Uma variavel na esquerda (g) chamada "cabeça de produção" -> pode ser produzido uma string com zero ou mais terminais e veriaveis 
+
+
+({P}, {0,1}, A , P)
+
+respectivamente 
+P = variavel
+0,1 = terminal
+A = produções
+P = Inicio 
+
+P -> &
+P -> 0
+P -> 1
+P -> 0P0
+P -> 1P1
+
+
+P variável de inicio 
+
+tenho 5 regras 
+
+p deriva cadeia vazia
+p deriva 0
+p deriva 1...
+
+o que não é variável é terminal 
+
+
+gramatica: gerar sentenças da linguagem certo, mas COMO é gerado, temos 2 abordagens
+derivação x inferência  recursiva 
+
+inferência recursiva: começamos da sentença, do final  e vamos regredindo até o símbolo inicial da gramatica 
+derivação: contrario, começamos do símbolo até chegar a sentença 
+
+a linguagem é um conjunto de todos strings que podemos obter a partir de uma inferência (símbolo inicial da gramatica )

@@ -3,7 +3,7 @@
 Resumo de TUDO sobre este projeto. Leia inteiro antes de mexer. O usuário fala português (BR); responda em português, com respostas breves (modo estudo). Criado em 2026-09-23.
 
 - Disciplina: Linguagens Formais e Compiladores (GRP00543) — UNIJUÍ, 2026/2º, turma 01RCOMP-101_6N · Prof. Marcos Ronaldo Melo Cavalheiro
-- Pasta: `G:\linguagem do manha` · Python 3.11 (global; ainda sem venv, só biblioteca padrão)
+- Pasta: `C:\Users\manha\Downloads\compilador\linguagem-do-manha` (desde 25/09; antes `G:\linguagem do manha`) · Python 3.10+ (só biblioteca padrão; **neste PC o Python não está instalado de verdade**, 25/09) · gcc 4.9.2 em `C:\MinGW\bin`
 - Git: repositório **PRIVADO** `github.com/eduardomanhabosco/linguagem-do-manha` (branch `main`), criado em 2026-09-24 para trocar de PC. Leva o código, este arquivo, `docs/`, `novo 1.txt`, os materiais da aula e `docs/claude/` (LEIA-ME + cópia da conversa). **Só entra o que é da disciplina** (pedido do usuário). Ter os docs no git é exceção à regra geral do usuário (ver "Decisões").
 - Documentos: este arquivo e `docs/` (DEVLOG.md = diário técnico, APRENDIZADOS.md = caderno de termos, MAPA.md = checklist, `enunciados/` = textos do professor, `claude/` = como continuar no PC novo + cópia da conversa)
 
@@ -19,6 +19,9 @@ Diário técnico, caderno de termos, enunciados e mapa de tarefas:
 @docs/enunciados/TP1_Linguagem_Tematica_v6.md
 @docs/enunciados/classroom.md
 @docs/MAPA.md
+@docs/ESPECIFICACAO.md
+@docs/ROTEIRO_APRESENTACAO.md
+@README.md
 
 ## Objetivo
 Criar uma linguagem de programação temática (inspirada na BIRL) e um transpilador que a traduz para C (ou Python), passando por: código-fonte → léxico → tokens → parser → AST → semântica → código destino. Vale 30 pontos: 15 do produto + 15 da apresentação e defesa (com perguntas individuais). Trabalho em grupo.
@@ -31,12 +34,15 @@ Criar uma linguagem de programação temática (inspirada na BIRL) e um transpil
 | EI02: ER e autômatos (formativo) | 11/09 (passou; Classroom mostra "Não entregue") | sem nota; ver se ainda aceita entrega |
 | Prova escrita individual (Aula 8) | **confirmar** | o texto do EI02 é da turma 4N (prova em 16/09); a sua turma é a 6N. Conteúdo: EI02 e aulas 2 e 3 |
 
-## Estado atual (2026-09-24)
-- Só pesquisa, planejamento e estudo. Nenhum código do transpilador ainda.
-- `lexico.py`: por enquanto só testes de regex (`=` × `==`); ainda não é o léxico.
-- Tema não fechado (ideia mais forte: cassino). Linguagem destino não decidida (recomendado: C).
-- Nada testado. **Sem compilador C no PC antigo** (gcc, clang, tcc e cl não encontrados em 23/09); conferir no PC novo e instalar antes da geração de código (MAPA 0.6).
-- **Estudo concluído** (os 13 conceitos, 23 a 25/09); resumo em `docs/resumo-conceitos.html`. **Próximo: decisões do grupo (MAPA §D, começando pelo D1 = Marco 1)** e os itens 0.x.
+## Estado atual (2026-09-25)
+- **Linguagem Gambiarra → C.** Todas as decisões fechadas (MAPA §D). Vocabulário do repo de um colega do grupo (`Gabeez11/gambiarra-transpiler`): **só as palavras**, a lógica de lá NÃO é usada.
+- **Código completo e testado: `python rodar_testes.py` → 10 de 10 OK** (25/09; Python 3.12.10 via winget).
+- **Grupo:** Eduardo Manhabosco, Rafael, Felipe, Gabriel (sobrenomes a completar).
+- **Entregáveis prontos em `entrega/`** (relatório TP1 em PDF, EI03 em PDF + zip), gerados por `python entrega/montar_entrega.py`. Faltam os campos amarelos `[PREENCHER]` (livros consultados, alterações do grupo) e os sobrenomes. O EI03 é individual/dupla: cada um gera o seu trocando `INTEGRANTES_EI03`.
+- Roteiro: `docs/ROTEIRO_APRESENTACAO.md`. Abertos no MAPA: itens 0.x, mostrar o marco ao professor, o grupo estudar o código, ensaio.
+- Python é a linguagem do transpilador; C é o destino. A justificativa do v6 §1 só valeria para trocar o destino.
+- Especificação (base do relatório): `docs/ESPECIFICACAO.md`. Uso: `README.md`.
+- Estudo concluído (13 conceitos); resumo em `docs/resumo-conceitos.html`.
 - **Troca de PC em 2026-09-24:** repo privado no GitHub com tudo o que é da disciplina; commits e push feitos pelo Claude a pedido do usuário e conferidos com um clone de teste. No PC novo: `docs/claude/LEIA-ME.md`.
 
 ## Como retomar
@@ -44,7 +50,7 @@ Criar uma linguagem de programação temática (inspirada na BIRL) e um transpil
 2. **PC novo?** Ver `docs/claude/LEIA-ME.md` (instalar, `git clone`, abrir o `claude` dentro da pasta).
 3. **Usando dois PCs:** ao começar, `git pull`; ao terminar, commit + `git push` (ver "Fluxo de trabalho").
 4. Seguir "Pendências" e o `docs/MAPA.md`.
-5. Rodar testes: `python lexico.py` (de dentro da pasta do projeto).
+5. Rodar testes: `python rodar_testes.py` (de dentro da pasta do projeto).
 
 ## Estrutura
 ```
@@ -52,7 +58,23 @@ CLAUDE.md               este resumo
 .gitignore              ignora __pycache__/
 .gitattributes          *.jsonl sem conversão de quebra de linha (para o claude --resume ler a conversa)
 novo 1.txt              anotações do usuário (resumos, aprendizados, ideias); só leitura para o Claude
-lexico.py               testes de regex; vai virar o analisador léxico
+README.md               pré-requisitos, uso e exemplo (entregável)
+tokens.py erros.py      tipos de token/reservadas; ErroLexico, ErroSintatico, ErroSemantico
+lexico.py               1. léxico (tabela de regras em ordem; erros continuam a leitura)
+ast_nos.py              nós da AST + desenho
+parser.py               2. descida recursiva → AST + árvore de derivação (para no 1º erro)
+semantico.py            3. tabela de símbolos (pilha de escopos), regras R1–R12 (lista todos)
+gerador.py              4. AST → C
+transpilador.py         linha de comando (--tokens --so-lexico --derivacao --ast --c --executar)
+rodar_testes.py         suíte: testes/NN.gam + .esperado.txt (+ .entrada.txt); --mostrar, --gravar
+testes/                 01–08 (válidos, erro léxico, sintático, semântico, todos os tokens, escopo)
+gerados/                o C gerado (os .exe ficam fora do git)
+estudo/regex_igual.py   o antigo lexico.py (= × ==), para explicar o maior casamento
+docs/ESPECIFICACAO.md   Σ, tokens/ER, G=(V,T,P,S), EBNF, regras semânticas, 3 decisões (base do relatório)
+docs/ROTEIRO_APRESENTACAO.md  quem apresenta o quê, comandos da demo, receitas p/ pedidos ao vivo, perguntas
+exemplos/precedencia.gam      2 + 3 * 4 (relatório e demo)
+entrega/                montar_entrega.py + modelos/*.html → Relatorio_TP1_Gambiarra.pdf, EI03_<nome>.pdf/.zip
+CEREBRO PENSANTE HAY HAY/  anotações do usuário (resumo.txt + 2 prints de GLC); só leitura
 Aula_02_-_Formal_Languages_Aluno.pptx (+ cópia "(1)", mesmo texto)  alfabeto Σ, palavra, ε, Σ*, Σ⁺, concatenação, fecho de Kleene, ∅ × {ε}
 aula_03_linguagens_regulares_AlunoV3.pdf   AFD, AFN, AFN-ε, construção de subconjuntos, ER, gramáticas regulares (29 págs.)
 docs/DEVLOG.md          diário técnico (também é a base da declaração de uso de IA)
@@ -79,8 +101,9 @@ Checklist completo em `docs/MAPA.md` (carregado acima): cada exigência do enunc
 - **Descartadas:** transpilador que sorteia/apaga código; emoji obrigatório na sintaxe.
 
 ## Em aberto
-- **Todas as escolhas do grupo estão em `docs/MAPA.md`, seção D** (linguagem, léxico, gramática, regras semânticas R1–R11, geração de C, projeto), com opções e recomendações. As principais: tema (ideia mais forte: cassino, ex.: `ABRE_MESA`/`FECHA_MESA`, `FICHA`, `GIRA_ROLETA`, `SE_DER`/`SE_NAO_DER`, `MOSTRA_CARTA`), as 3 decisões próprias e o destino (C, recomendado).
-- Integrantes do grupo.
+- Decisões: **todas fechadas em 25/09** (MAPA §D). Resta só o roteiro da apresentação (quem apresenta o quê).
+- Integrantes do grupo (nomes); o colega do repo `gambiarra-transpiler` é um deles.
+- Rodar o código pela primeira vez (falta Python neste PC).
 
 ## Aprendizados e cuidados
 - **Notação de ER:** nos slides do professor, `+` é **união** (`(a + b)*`), mas `digit+` aparece como "um ou mais". No Python e no JFlex, união é `|` e `+` é "um ou mais". No relatório, dizer qual notação usamos.
@@ -131,3 +154,4 @@ Tudo está no `docs/MAPA.md`; marcar `[x]` lá quando o item ficar pronto e test
 - 2026-09-24: conceitos 2 (GLC) e 3 (BNF/EBNF); dúvida sintático × semântico; "pegadinha" do Flex; troca de PC com repo privado (só o que é da disciplina). A conversa, até o pedido de commit, está em `docs/claude/conversa-2026-09-23.jsonl`.
 - 2026-09-24 (de volta ao PC antigo, sem mudanças no GitHub): conceito 3 reenviado e conceitos 4 a 8; dúvidas sobre `"("` × `(` e sobre OpRel × operadores lógicos.
 - 2026-09-25: conceitos 9 a 13 (fim do estudo), resumo visual dos conceitos, seção D (decisões do grupo) no MAPA; commit e push.
+- 2026-09-25 (pasta nova em Downloads): todas as decisões fechadas por perguntas; tema Gambiarra; código completo + testes + README + ESPECIFICACAO escritos (Python ainda não rodou).
