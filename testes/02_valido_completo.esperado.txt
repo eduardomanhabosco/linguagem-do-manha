@@ -1,0 +1,12 @@
+OK: sem erros. C gerado em gerados/02_valido_completo.c
+
+===== EXECUÇÃO =====
+Quantos remendos?
+a = 14, b = 20, c = 5
+d = 3, e = 1, media = 8.5
+remendo 1 aplicado
+remendo 2 aplicado
+remendo 3 aplicado
+remendo 4 aplicado
+soma = 10
+A gambiarra esta firme: firme

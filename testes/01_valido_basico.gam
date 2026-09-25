@@ -1,0 +1,20 @@
+// Teste 01: declaração, atribuição e saída (enunciado §8).
+gambiarra {
+    remendo fita = 10;          // inteiro (deduzido do valor)
+    remendo cola = 2.5;         // real
+    remendo ligado = firme;     // lógico
+
+    fita = fita + 5;
+    cola = cola * 2;
+
+    mostra("fita: ", fita);
+    mostra("cola: ", cola);
+    mostra("ligado: ", ligado);
+    mostra("Sistema Gambiarra iniciado");
+}
+/* Saída esperada do programa:
+fita: 15
+cola: 5
+ligado: firme
+Sistema Gambiarra iniciado
+*/

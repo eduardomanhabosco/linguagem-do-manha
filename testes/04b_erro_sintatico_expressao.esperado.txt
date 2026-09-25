@@ -1,0 +1,4 @@
+===== ERRO SINTÁTICO =====
+Erro sintático [linha 3, coluna 21]: esperava um valor (número, variável, firme, quebrado ou '('), mas encontrei ';'
+
+Processamento interrompido.

@@ -1,0 +1,5 @@
+// Teste 04b: erro sintático do enunciado §7: declaração termina sem expressão após '='.
+gambiarra {
+    remendo total = ;
+    mostra(total);
+}

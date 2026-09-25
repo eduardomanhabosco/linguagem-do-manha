@@ -1,0 +1,17 @@
+// opcoes: --so-lexico
+// Teste 06: todos os tipos de token válidos (EI03 P4a). Só o léxico roda.
+/* comentário
+   de bloco */
+gambiarra {
+    remendo inteiro_1 = 42;
+    remendo real_1 = 3.14;
+    remendo _ok = firme || quebrado && !firme;
+    se (inteiro_1 == 42 && inteiro_1 != 0) {
+        mostra("texto com \"aspas\", \\ e \t tab\n", inteiro_1 % 5);
+    } senao {
+        pega(inteiro_1);
+    }
+    enquanto (real_1 >= 1.0 || inteiro_1 <= 0 || inteiro_1 > 1 || inteiro_1 < 2) {
+        real_1 = real_1 / 2 - 1 + 0.5 * -1;
+    }
+}

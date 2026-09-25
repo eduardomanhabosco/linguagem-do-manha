@@ -1,0 +1,4 @@
+OK: sem erros. C gerado em gerados/09_valido_com_bom.c
+
+===== EXECUÇÃO =====
+BOM ignorado

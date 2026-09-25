@@ -1,0 +1,23 @@
+// Teste 08: o exemplo do enunciado (teste.birl) reescrito na Gambiarra.
+gambiarra {
+    remendo repeticoes = 3;
+    remendo carga = 10.5;
+
+    enquanto (repeticoes > 0) {
+        mostra(repeticoes);
+        carga = carga + 2 * 1.5;
+        repeticoes = repeticoes - 1;
+    }
+
+    se (carga >= 15) {
+        mostra("Treino concluido!");
+    } senao {
+        mostra("Ainda falta carga.");
+    }
+}
+/* Saída esperada do programa:
+3
+2
+1
+Treino concluido!
+*/

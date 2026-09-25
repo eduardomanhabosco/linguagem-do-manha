@@ -1,0 +1,4 @@
+===== ERRO SINTÁTICO =====
+Erro sintático [linha 4, coluna 22]: esperava ';' depois de '2' (fim da linha 4), mas encontrei 'mostra' na linha 5
+
+Processamento interrompido.

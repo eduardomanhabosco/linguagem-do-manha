@@ -1,0 +1,13 @@
+// Teste 07: escopo por bloco e sombreamento (regras R3, R4 e R9).
+gambiarra {
+    remendo x = 1;
+    se (x > 0) {
+        remendo x = x + 10;     // um x NOVO (11), calculado com o x de fora (1)
+        mostra("x de dentro: ", x);
+    }
+    mostra("x de fora: ", x);
+}
+/* Saída esperada do programa:
+x de dentro: 11
+x de fora: 1
+*/

@@ -1,0 +1,7 @@
+OK: sem erros. C gerado em gerados/08_valido_exemplo_enunciado.c
+
+===== EXECUÇÃO =====
+3
+2
+1
+Treino concluido!

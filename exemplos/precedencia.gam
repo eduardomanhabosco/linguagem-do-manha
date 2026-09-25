@@ -1,0 +1,5 @@
+// Exemplo curto para mostrar a precedencia (relatorio e demo).
+gambiarra {
+    remendo r = 2 + 3 * 4;
+    mostra(r);
+}

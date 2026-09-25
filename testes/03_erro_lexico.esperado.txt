@@ -1,0 +1,11 @@
+===== ERROS LÉXICOS =====
+Erro léxico [linha 4, coluna 14]: caractere que não pertence à linguagem: '@'
+Erro léxico [linha 5, coluna 13]: número malformado (inteiro: 10; real: 10.5; nome não começa com dígito): '2abc'
+Erro léxico [linha 6, coluna 17]: número malformado (inteiro: 10; real: 10.5; nome não começa com dígito): '3.4.5'
+Erro léxico [linha 7, coluna 13]: identificador com caractere inválido (use só letras sem acento, dígitos e _): 'preço'
+Erro léxico [linha 8, coluna 11]: caractere que não pertence à linguagem: '&'
+Erro léxico [linha 9, coluna 12]: texto sem fechar aspas (o texto não pode quebrar linha): '"texto sem fechar);'
+Erro léxico [linha 10, coluna 17]: número malformado (inteiro: 10; real: 10.5; nome não começa com dígito): '5.'
+Erro léxico [linha 12, coluna 1]: comentário de bloco '/*' aberto e nunca fechado com '*/': '/* comentário de bloco que nun...'
+
+8 erro(s) léxico(s). Processamento interrompido.

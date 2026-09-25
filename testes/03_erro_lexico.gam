@@ -1,0 +1,12 @@
+// Teste 03: erros léxicos (enunciado §7 e EI03 P4b). O léxico reporta TODOS e continua lendo.
+gambiarra {
+    remendo x = 10;
+    mostra(x @ 2);
+    remendo 2abc = 5;
+    remendo y = 3.4.5;
+    remendo preço = 1;
+    x = x & 1;
+    mostra("texto sem fechar);
+    remendo z = 5.;
+}
+/* comentário de bloco que nunca fecha

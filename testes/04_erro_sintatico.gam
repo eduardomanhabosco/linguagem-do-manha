@@ -1,0 +1,6 @@
+// Teste 04: erro sintático (enunciado §8). Falta o ';' no fim da linha 4.
+gambiarra {
+    remendo x = 10;
+    remendo y = x * 2
+    mostra(y);
+}

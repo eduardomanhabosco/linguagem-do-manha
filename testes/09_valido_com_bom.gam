@@ -1,0 +1,4 @@
+﻿// Teste 09: arquivo salvo com BOM (marca invisivel do Bloco de Notas/PowerShell) tem que funcionar.
+gambiarra {
+    mostra("BOM ignorado");
+}

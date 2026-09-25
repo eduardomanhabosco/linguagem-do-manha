@@ -1,0 +1,20 @@
+// Teste 05: erros semânticos (enunciado §5 e §8). A semântica lista TODOS e não gera o C.
+gambiarra {
+    remendo vidas = 3;
+    remendo peso = 2.5;
+    remendo ligado = firme;
+
+    mostra(pontos);              // R1: usada sem declarar
+    total = 10;                  // R1: atribuição sem declarar
+    remendo vidas = 5;           // R2: declarada duas vezes no mesmo escopo
+    vidas = peso;                // R7: inteiro não recebe real
+    ligado = 1;                  // R7: lógico não recebe número
+    remendo resto = peso % 2;    // R5: % só entre inteiros
+    se (vidas) {                 // R10: condição tem que ser lógica
+        mostra("nunca");
+    }
+    enquanto (ligado + 1 > 0) {  // R5: lógico não entra em conta
+        pega(ligado);            // R11: pega não lê lógico
+    }
+    remendo x = x + 1;           // R9: o x ainda não existe
+}

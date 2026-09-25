@@ -1,0 +1,7 @@
+OK: sem erros. C gerado em gerados/01_valido_basico.c
+
+===== EXECUÇÃO =====
+fita: 15
+cola: 5
+ligado: firme
+Sistema Gambiarra iniciado

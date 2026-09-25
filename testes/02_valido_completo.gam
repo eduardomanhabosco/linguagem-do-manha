@@ -1,0 +1,44 @@
+// Teste 02: condicional, repetição, entrada/saída e precedência (enunciado §8).
+// A entrada (o que o 'pega' lê) está em 02_valido_completo.entrada.txt: 4
+gambiarra {
+    remendo limite = 0;
+    mostra("Quantos remendos?");
+    pega(limite);
+
+    // precedência: * antes de +, e os parênteses mudam a ordem
+    remendo a = 2 + 3 * 4;          // 14
+    remendo b = (2 + 3) * 4;        // 20
+    remendo c = 10 - 3 - 2;         // 5 (associatividade à esquerda)
+    remendo d = 7 / 2;              // 3 (divisão inteira, regra R8)
+    remendo e = 7 % 2;              // 1
+    remendo media = (a + b) / 4.0;  // 8.5 (inteiro com real dá real, regra R5)
+    mostra("a = ", a, ", b = ", b, ", c = ", c);
+    mostra("d = ", d, ", e = ", e, ", media = ", media);
+
+    remendo contador = 1;
+    remendo soma = 0;
+    enquanto (contador <= limite) {
+        soma = soma + contador;
+        mostra("remendo ", contador, " aplicado");
+        contador = contador + 1;
+    }
+    mostra("soma = ", soma);
+
+    remendo firmeza = soma > 5 && !(limite == 0);
+    se (firmeza || quebrado) {
+        mostra("A gambiarra esta firme: ", firmeza);
+    } senao {
+        mostra("A gambiarra quebrou");
+    }
+}
+/* Saída esperada do programa (com a entrada 4):
+Quantos remendos?
+a = 14, b = 20, c = 5
+d = 3, e = 1, media = 8.5
+remendo 1 aplicado
+remendo 2 aplicado
+remendo 3 aplicado
+remendo 4 aplicado
+soma = 10
+A gambiarra esta firme: firme
+*/

@@ -1,0 +1,5 @@
+OK: sem erros. C gerado em gerados/07_valido_escopo.c
+
+===== EXECUÇÃO =====
+x de dentro: 11
+x de fora: 1

@@ -1,0 +1,13 @@
+===== ERROS SEMÂNTICOS =====
+Erro semântico [linha 7, coluna 12]: a variável 'pontos' foi usada antes de ser declarada (regra R1)
+Erro semântico [linha 8, coluna 5]: atribuição à variável 'total', que não foi declarada (regra R1: declare antes com 'remendo total = ...;')
+Erro semântico [linha 9, coluna 13]: a variável 'vidas' já foi declarada neste escopo, na linha 3 (regra R2: não pode declarar duas vezes no mesmo escopo)
+Erro semântico [linha 10, coluna 5]: a variável 'vidas' é inteiro e não pode receber um valor real (regra R7)
+Erro semântico [linha 11, coluna 5]: a variável 'ligado' é logico e não pode receber um valor inteiro (regra R7)
+Erro semântico [linha 12, coluna 26]: o operador '%' só aceita inteiros, mas recebeu real e inteiro (regra R5)
+Erro semântico [linha 13, coluna 9]: a condição do 'se' tem que ser lógica, mas é inteiro (regra R10; ex.: use 'x > 0' em vez de 'x')
+Erro semântico [linha 16, coluna 22]: o operador '+' só aceita números, mas recebeu logico e inteiro (regra R5)
+Erro semântico [linha 17, coluna 14]: pega(ligado): a variável 'ligado' é lógica; pega só lê inteiro ou real (regra R11)
+Erro semântico [linha 19, coluna 17]: a variável 'x' foi usada antes de ser declarada (regra R1)
+
+10 erro(s) semântico(s). O código C NÃO foi gerado.
