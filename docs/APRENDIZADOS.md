@@ -58,6 +58,42 @@ Caderno de termos do projeto, explicados de forma simples. O gatilho "memória" 
 **O que é:** notações padrão para escrever as regras (P) de uma gramática.
 **Explicação:** BNF: `<Nome>` = variável, `::=` = "é definido como", `|` = ou, `"texto"` = terminal fixo, `id`/`num` = classe de token. EBNF acrescenta `{ }` (zero ou mais), `[ ]` (opcional) e `( )` (agrupar). Exemplo: `<Bloco> ::= <Comando> <Bloco> | ε` vira `<Bloco> ::= { <Comando> }`. Não aumenta o poder da BNF, só abrevia.
 
+## `"("` com aspas × `(` sem aspas  (2026-09-24)
+**O que é:** na BNF/EBNF, aspas = token que aparece no programa; sem aspas = agrupamento da notação.
+**Explicação:** em `"(" ( string | <Expressao> ) ")"` só os parênteses com aspas aparecem em `CE_QUER_VER ("oi");`. Os de fora das aspas só dizem "um texto OU uma expressão", como os parênteses de `2 × (3 + 4)`.
+
+## Operador relacional × lógico  (2026-09-24)
+**O que é:** relacional (OpRel) compara dois valores; lógico junta comparações.
+**Explicação:** relacionais: `== != > >= < <=` (`saldo >= 10`). Lógicos: E, OU, NÃO (em C: `&&`, `||`, `!`), como em `x > 0 E x < 10`. Os dois dão verdadeiro/falso; os aritméticos (`+ - * /`) dão número.
+
+## Derivação e árvore de derivação  (2026-09-24)
+**O que é:** derivação = trocar uma variável de cada vez até sobrar só terminal; a árvore é o desenho disso.
+**Explicação:** `⇒` = um passo, `⇒*` = vários. Na árvore, a raiz é o símbolo inicial, os nós são variáveis e as folhas, lidas da esquerda para a direita, formam o programa. A derivação mais à esquerda e a mais à direita dão a mesma árvore: ela guarda a estrutura, não a ordem.
+
+## Ambiguidade e precedência  (2026-09-24)
+**O que é:** uma gramática é ambígua quando um programa tem duas árvores; a precedência diz o que é calculado primeiro.
+**Explicação:** `E → E + E | E * E` dá duas árvores para `2 + 3 * 4` (14 ou 20). A solução é um "andar" por nível: Expressao (+ −) → Termo (* /) → Fator (número, variável, parênteses). O mais fraco fica perto da raiz, e o que está mais fundo é calculado primeiro.
+
+## Associatividade e recursão à esquerda  (2026-09-24)
+**O que é:** associatividade decide a ordem entre operadores do mesmo nível; recursão à esquerda é uma regra que começa por ela mesma.
+**Explicação:** `10 - 3 - 2` = `(10 - 3) - 2` = 5 (à esquerda). `E → E - T` daria isso, mas trava a descida recursiva: a função chama a si mesma sem consumir token (laço infinito). Solução: `T { - T }`, um `while` que junta cada termo novo à direita da árvore já montada.
+
+## LL(1) e conjunto PRIMEIROS  (2026-09-24)
+**O que é:** LL(1) = lê da esquerda, derivação mais à esquerda, espiando 1 token. PRIMEIROS = os tokens que podem iniciar uma regra.
+**Explicação:** o parser escolhe a regra olhando só o próximo token, então as alternativas precisam começar com tokens diferentes (Declaracao com `MONSTRO`, Escrita com `CE_QUER_VER`...). Se duas começarem igual, é preciso reescrever a gramática (fatoração à esquerda).
+
+## Erro sintático  (2026-09-24)
+**O que é:** tokens válidos numa ordem que a gramática não gera.
+**Explicação:** detectado no `consome` ou num ponto de escolha. A mensagem deve dizer linha, coluna, o token encontrado e o esperado ("esperava ';', mas encontrei 'CE_QUER_VER'"). O parser para no primeiro erro; o léxico, ao contrário, reporta e continua.
+
+## Escopo e pilha de tabelas  (2026-09-25)
+**O que é:** escopo é a região do programa em que um nome existe.
+**Explicação:** com escopo por bloco (como no C), cada if/while tem a sua tabela: empilha ao entrar e desempilha ao sair. Declarar olha só o topo ("mesmo escopo"); procurar vai do topo para baixo. Declarar dentro do bloco um nome que já existe fora é o "sombreamento".
+
+## Promoção de tipos e tipagem estática  (2026-09-25)
+**O que é:** tipagem estática = o tipo é conhecido antes de rodar; promoção = o inteiro "sobe" para real numa conta mista.
+**Explicação:** `2 + 3.5` é real. A semântica calcula o tipo de baixo para cima (literal pelo formato, variável pela tabela, operação pela regra). No C, `7 / 2` dá 3 (divisão inteira).
+
 ## Parser por descida recursiva  (2026-09-23)
 **O que é:** a 2ª fase: confere se os tokens seguem a gramática. Cada regra vira uma função.
 **Explicação:** `Expressao` chama `Termo`, que chama `Fator`. Como `*` fica num nível mais baixo, `2 + 3 * 4` vira `2 + (3 * 4)` sozinho: a precedência está na gramática.

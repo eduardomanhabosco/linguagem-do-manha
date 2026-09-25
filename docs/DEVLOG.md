@@ -52,6 +52,22 @@ Formato de cada entrada: **Data · Problema/decisão · O que tentamos · Result
 - **Commit extra:** `.gitattributes` com `*.jsonl -text`. No Windows, o Git trocaria as quebras de linha (LF → CRLF) da cópia da conversa ao baixar, o que podia atrapalhar o `claude --resume`.
 - **Push:** OK, 5 commits (`bd4a16b` a `6cbdb0d`), mais um último com este registro. **Teste:** clone numa pasta temporária: mesmo commit do GitHub, os 15 arquivos iguais aos originais, slides e PDF idênticos byte a byte, `.jsonl` idêntico (909 linhas JSON válidas) e os imports do `CLAUDE.md` carregando.
 
+## 2026-09-24 · Conceitos 3 a 8 (de volta ao PC antigo)
+- **Retomada:** o usuário voltou ao PC antigo. `git fetch` mostrou o GitHub igual ao local, então não havia nada a baixar. O conceito 3 foi reenviado, porque tinha ido logo antes da troca.
+- **Dúvidas no conceito 3:** (1) `"("` × `(`: com aspas é token e aparece no programa; sem aspas só agrupa na notação. Exemplo: sem o agrupamento, a regra do `<Escrita>` aceitaria `CE_QUER_VER ("oi"` sem fechar. (2) OpRel = operador relacional (compara e dá verdadeiro/falso) × aritmético (faz conta) × lógico (E/OU/NÃO, junta comparações). A `<ExprLogica>` da BIRL-Lite só aceita uma comparação; o EI03 pede os lógicos no léxico → **recomendação:** pôr na gramática também.
+- **Conceito 4 (derivação):** ⇒, ⇒*, forma sentencial, sentença; derivação mais à esquerda × mais à direita = mesma árvore; árvores de `2 + 3 * 4` e `(2 + 3) * 4`.
+- **Conceito 5 (ambiguidade e precedência):** `E → E + E | E * E` dá duas árvores (14 × 20); os "andares" Expressao/Termo/Fator, com os parênteses como "elevador"; tabela de andares incluindo os lógicos; o "else pendurado" e como um fechamento explícito o evita.
+- **Conceito 6 (associatividade e recursão à esquerda):** `10 - 3 - 2`; a árvore pende para o lado da recursão; recursão à esquerda → `RecursionError` na descida recursiva; `{ }` = `while` que acumula à esquerda; a transformação do livro `A → β A'`, `A' → α A' | ε`; recursão à esquerda indireta.
+- **Conceito 7 (descida recursiva):** parser de exemplo (~90 linhas, subconjunto da BIRL-Lite) mostrado **no chat, não salvo em arquivo**; LL(1), conjunto PRIMEIROS, fatoração à esquerda; como o `BIRL` pode fechar três coisas. Dica de projeto: cada comando começa com a sua própria palavra-chave.
+- **Conceito 8 (erros sintáticos):** onde o erro é detectado (no `consome` e nos pontos de escolha); mensagem = linha, coluna, encontrado e esperado; tokens passam a levar linha e coluna; classe `ErroSintatico`; o `;` esquecido (apontar a linha do token anterior); o léxico continua e o parser para.
+- **Achado "à risca":** o aviso do Classroom diz "analisador sintático funcionando, **com árvore de derivação**", e o v6 pede AST. Para cobrir os dois, entrou no MAPA uma opção que imprime a árvore de derivação (as chamadas do parser, indentadas), além da AST.
+
+## 2026-09-25 · Conceitos 9 a 13, resumo visual e decisões do grupo
+- **Conceitos 9 a 13:** AST (dataclasses com a linha em cada nó); semântica (tabela de símbolos, escopo por bloco com uma pilha de tabelas, sombreamento a decidir); tipos (de baixo para cima, promoção, pelo menos um "❌", divisão inteira do C); geração de C (mapa AST → C, parênteses sempre, prefixo `v_`, `printf("%s")` para texto, `float` para o `scanf` usar `%f`); compilador × transpilador × interpretador (o Cfront gerava C). Terminada a fase de estudo.
+- **Resumo visual** (pedido do usuário): `docs/resumo-conceitos.html` + versão online privada (https://claude.ai/artifact/25wcNyj8hd6nGu1x7vgBuZ). Segue a estrutura do `novo 1.txt`, com as anotações dele, os 2 prints do "else pendurado" (ALGOL 68 e C/C++), o vídeo de Pratt parsing (com aviso: não é a técnica que usamos), um desenho do "separador de moedas" do léxico e uma pergunta de arguição por conceito. Corrigida uma anotação: a regra `. → [text, text]` não será usada.
+- **Seção D no MAPA:** as decisões que o grupo precisa tomar estavam espalhadas pelos conceitos; foram reunidas em D1 a D6 (53 itens, 26 com recomendação), incluindo o rascunho das regras semânticas R1 a R11.
+- **Commit e push** feitos pelo Claude a pedido do usuário.
+
 ## Uso de IA (para a declaração obrigatória)
 | Data | Ferramenta | Finalidade | Etapa | Como verificamos | O que o aluno fez/alterou |
 |---|---|---|---|---|---|
@@ -59,3 +75,5 @@ Formato de cada entrada: **Data · Problema/decisão · O que tentamos · Result
 | 2026-09-23 | Claude Code (Claude Opus 5.5, Anthropic) | organização da documentação do projeto (CLAUDE.md, DEVLOG, APRENDIZADOS) | planejamento | (preencher) | (preencher) |
 | 2026-09-23 | Claude Code (Claude Opus 5.5, Anthropic) | mapa de tarefas a partir do enunciado; explicação dos conceitos (modo aula) | planejamento / estudo | (preencher) | (preencher) |
 | 2026-09-24 | Claude Code (Claude Opus 5.5, Anthropic) | explicação de GLC e BNF/EBNF; preparo do repositório privado para trocar de PC | estudo / organização | (preencher) | (preencher) |
+| 2026-09-24 | Claude Code (Claude Opus 5.5, Anthropic) | explicação dos conceitos 4 a 8 (derivação, ambiguidade, associatividade, descida recursiva, erros sintáticos), com código de exemplo | estudo | (preencher) | (preencher) |
+| 2026-09-25 | Claude Code (Claude Opus 5.5, Anthropic) | explicação dos conceitos 9 a 13; resumo visual a partir das anotações do aluno; lista de decisões do grupo | estudo / organização | (preencher) | (preencher) |

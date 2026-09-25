@@ -36,7 +36,7 @@ Criar uma linguagem de programação temática (inspirada na BIRL) e um transpil
 - `lexico.py`: por enquanto só testes de regex (`=` × `==`); ainda não é o léxico.
 - Tema não fechado (ideia mais forte: cassino). Linguagem destino não decidida (recomendado: C).
 - Nada testado. **Sem compilador C no PC antigo** (gcc, clang, tcc e cl não encontrados em 23/09); conferir no PC novo e instalar antes da geração de código (MAPA 0.6).
-- Fase atual: estudo dos conceitos, um por mensagem (MAPA §1). Vistos: 1 (visão geral) e 2 (GLC). **3 (BNF e EBNF) enviado em 24/09**; perguntar se há dúvidas e seguir para o 4 (derivação).
+- **Estudo concluído** (os 13 conceitos, 23 a 25/09); resumo em `docs/resumo-conceitos.html`. **Próximo: decisões do grupo (MAPA §D, começando pelo D1 = Marco 1)** e os itens 0.x.
 - **Troca de PC em 2026-09-24:** repo privado no GitHub com tudo o que é da disciplina; commits e push feitos pelo Claude a pedido do usuário e conferidos com um clone de teste. No PC novo: `docs/claude/LEIA-ME.md`.
 
 ## Como retomar
@@ -58,6 +58,9 @@ aula_03_linguagens_regulares_AlunoV3.pdf   AFD, AFN, AFN-ε, construção de sub
 docs/DEVLOG.md          diário técnico (também é a base da declaração de uso de IA)
 docs/APRENDIZADOS.md    caderno de termos (gatilho "memória")
 docs/MAPA.md            checklist de TUDO o que é pedido (com a origem de cada item) + roteiro dos conceitos
+docs/resumo-conceitos.html   resumo visual dos 13 conceitos (abre offline; imagens embutidas). Versão online (privada):
+                        https://claude.ai/artifact/25wcNyj8hd6nGu1x7vgBuZ. Fonte para editar: refazer a partir do novo 1.txt
+ANGOL68.png, C_C++.png  prints do usuário sobre o "else pendurado" (usados no resumo, conceito 5)
 docs/enunciados/TP1_Linguagem_Tematica_v6.md   enunciado completo do TP1 (achado no GitHub; ver "Referências")
 docs/enunciados/classroom.md                    textos do Classroom: aviso do TP1, EI03 e EI02
 docs/claude/            LEIA-ME.md (como continuar no PC novo) e conversa-2026-09-23.jsonl (cópia da conversa de 23–24/09)
@@ -76,9 +79,7 @@ Checklist completo em `docs/MAPA.md` (carregado acima): cada exigência do enunc
 - **Descartadas:** transpilador que sorteia/apaga código; emoji obrigatório na sintaxe.
 
 ## Em aberto
-- Tema. Ideia mais forte: cassino (ex.: `ABRE_MESA`/`FECHA_MESA`, `FICHA`, `GIRA_ROLETA`, `SE_DER`/`SE_NAO_DER`, `MOSTRA_CARTA`).
-- Linguagem destino: C (referência do enunciado; recomendado) ou Python (precisa justificar e avisar o professor no Marco 1).
-- As 3 decisões próprias de sintaxe.
+- **Todas as escolhas do grupo estão em `docs/MAPA.md`, seção D** (linguagem, léxico, gramática, regras semânticas R1–R11, geração de C, projeto), com opções e recomendações. As principais: tema (ideia mais forte: cassino, ex.: `ABRE_MESA`/`FECHA_MESA`, `FICHA`, `GIRA_ROLETA`, `SE_DER`/`SE_NAO_DER`, `MOSTRA_CARTA`), as 3 decisões próprias e o destino (C, recomendado).
 - Integrantes do grupo.
 
 ## Aprendizados e cuidados
@@ -89,6 +90,8 @@ Checklist completo em `docs/MAPA.md` (carregado acima): cada exigência do enunc
 - **Blog do Sérgio Miranda ("Caipires") × TP1:** cobre léxico, parser/AST e compilador. Runtime, interpretador e máquina virtual não entram no TP. **Faltam no blog:** semântica, tratamento de erros, especificação formal (Σ, tokens/ER, G = (V,T,P,S)), precedência, recursão à esquerda, maior casamento e geração de C. **Erro no blog:** a lista das classes de Chomsky traz "recursiva" no lugar de "sensível ao contexto".
 - **Erro sintático × semântico, o teste dos tokens:** troque cada nome e número pelo tipo do token (`x` → `id`, `5` → `num`). Se o erro continua visível, é sintático; se sumiu, é semântico. `CE_QUER_VER (x);` e `CE_QUER_VER (y);` viram a mesma sequência de tokens, então o parser não tem como saber se `y` foi declarada. Teoria: "declarar antes de usar" não é livre de contexto (linguagem {wcw}); o Aho trata disso no cap. 4 (seção 4.3.5 da 2ª ed., pela memória do Claude — **conferir no livro antes de citar**).
 - **EBNF:** `{ }` = zero ou mais, `[ ]` = opcional, `( | )` = agrupar. Não descreve nenhuma linguagem a mais que a BNF, só abrevia. `"("` com aspas é token; `(` sem aspas é da notação. Cada pedaço vira código: `<Nome>` → chamar função, `{ }` → `while`, `[ ]` → `if`.
+- **Precedência, associatividade e recursão à esquerda:** um nível (variável) por precedência, com o operador mais fraco perto da raiz; `E → E + E | E * E` é ambígua (duas árvores: 14 e 20). `−` e `/` são associativos à esquerda (`10 - 3 - 2 = 5`); a recursão à esquerda (`E → E - T`) trava a descida recursiva (a função chama a si mesma sem consumir token), então usamos `T { - T }` = `while` que acumula à esquerda. O "else pendurado" some com if de fechamento explícito.
+- **Parser LL(1):** `proximo()` espia e `consome(tipo)` confere e avança; cada alternativa precisa começar com um token diferente (conjunto PRIMEIROS). Erro sintático: linha, coluna, token encontrado e esperado; **o léxico reporta e continua, o parser para no 1º erro**; classes de erro próprias.
 - **Regra "pega-tudo" (`.`):** no Rexical, `. { [text, text] }` transforma QUALQUER caractere em token, então um `@` seria aceito. No nosso léxico, cada símbolo tem regra e nome próprios (`ABRE_PAREN`, `MAIS`...) e o "qualquer outro caractere" vira **erro léxico** (linha, coluna e lexema), e a leitura continua (EI03, P3c).
 
 ## Referências e links
@@ -105,7 +108,7 @@ Checklist completo em `docs/MAPA.md` (carregado acima): cada exigência do enunc
 - Demonstração de token × lexema com emojis como apelido (dois lexemas, mesmo token), se a ideia dos emojis for usada.
 
 ## Pendências
-Tudo está no `docs/MAPA.md`; marcar `[x]` lá quando o item ficar pronto e testado. Ordem agora: dúvidas do conceito 3 → conceitos 4 a 13 (MAPA §1) → itens 0.x (confirmar prazos e grupo, instalar gcc no PC em uso) → Marco 1.
+Tudo está no `docs/MAPA.md`; marcar `[x]` lá quando o item ficar pronto e testado. Ordem agora: decisões do grupo (MAPA §D, começando pelo D1) → itens 0.x (confirmar prazos e grupo, instalar gcc no PC em uso) → Marco 1.
 
 ## Riscos / cuidados
 - **Originalidade e plágio:** o repositório do outro grupo é público e da mesma turma. Usar só como referência de formato; o professor faz perguntas individuais e pede mudanças ao vivo.
@@ -120,9 +123,11 @@ Tudo está no `docs/MAPA.md`; marcar `[x]` lá quando o item ficar pronto e test
 - **Modo aula** (pedido em 2026-09-23): o usuário pergunta sobre tudo o que vamos usar, intercalado com código. Explicar no estilo do blog (texto corrido + um exemplo que acompanha; exemplo: a BIRL-Lite do enunciado), **um conceito por mensagem**, na ordem do MAPA §1, terminando com "dúvidas?" e o nome do próximo. Léxico já foi visto (pular).
 - **À risca:** nada do que o enunciado, o aviso ou o EI03 pedem pode faltar. Antes de dar uma parte por pronta, conferir os itens do MAPA com a origem.
 - **Antes de todo commit:** pente fino no que vai ao GitHub. **Padrão de commit** ([iuricode/padroes-de-commits](https://github.com/iuricode/padroes-de-commits)): `:emoji: tipo: Descrição`, título curto (~4 palavras), detalhes no corpo, um commit por assunto. Tipos: `feat` :sparkles: · `fix` :bug: · `docs` :books: · `refactor` :recycle: · `perf` :zap: · `build` :package: · `chore` :wrench: · `style` :lipstick: · `cleanup` :broom: · `remove` :wastebasket: · `test` :test_tube: · primeiro commit `:tada: init`.
-- **Anotar TUDO o que for programado** (pedido do usuário em 2026-09-23): registrar no DEVLOG o que foi feito, por quê, como testamos (comando + saída), os erros e as correções, e a linha da tabela de uso de IA. Esse material vira o relatório, o README, o roteiro da apresentação e a declaração de IA. O estado resumido fica neste arquivo. **Checkpoint de documentação a cada 9 trocas de mensagens** (pedido do usuário em 2026-09-23): atualizar DEVLOG, APRENDIZADOS, MAPA e este arquivo, e avisar numa linha; também ao encerrar/pausar e quando ele pedir. Último checkpoint: 2026-09-24 (troca de PC; conceitos 2 e 3).
+- **Anotar TUDO o que for programado** (pedido do usuário em 2026-09-23): registrar no DEVLOG o que foi feito, por quê, como testamos (comando + saída), os erros e as correções, e a linha da tabela de uso de IA. Esse material vira o relatório, o README, o roteiro da apresentação e a declaração de IA. O estado resumido fica neste arquivo. **Checkpoint de documentação a cada 9 trocas de mensagens** (pedido do usuário em 2026-09-23): atualizar DEVLOG, APRENDIZADOS, MAPA e este arquivo, e avisar numa linha; também ao encerrar/pausar e quando ele pedir. Último checkpoint: 2026-09-25 (conceitos 9 a 13, resumo visual, seção D do MAPA; commit).
 - **Git (repo privado):** commits no padrão acima, com a linha `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` no fim quando o Claude ajudou (reforça a transparência no uso de IA que o professor exige). **Só entra o que é da disciplina** (pedido do usuário em 24/09); `__pycache__/` fica fora. Em geral o usuário roda `git add/commit/push`; na troca de PC (24/09) ele pediu que o Claude fizesse.
 
 ## Histórico
 - 2026-09-23: primeira conversa. Busca na web (enunciado completo achado no GitHub, exemplos, teoria), ideias de tema (cassino, emojis), dúvidas de léxico (token/lexema, Rexical, Lex, maior casamento), montagem desta documentação e dos imports. Detalhes no DEVLOG.
 - 2026-09-24: conceitos 2 (GLC) e 3 (BNF/EBNF); dúvida sintático × semântico; "pegadinha" do Flex; troca de PC com repo privado (só o que é da disciplina). A conversa, até o pedido de commit, está em `docs/claude/conversa-2026-09-23.jsonl`.
+- 2026-09-24 (de volta ao PC antigo, sem mudanças no GitHub): conceito 3 reenviado e conceitos 4 a 8; dúvidas sobre `"("` × `(` e sobre OpRel × operadores lógicos.
+- 2026-09-25: conceitos 9 a 13 (fim do estudo), resumo visual dos conceitos, seção D (decisões do grupo) no MAPA; commit e push.
