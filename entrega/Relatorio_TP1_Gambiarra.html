@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Relatório TP1 — Gambiarra</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #1a1a1a; }
+  h1 { font-size: 20pt; margin: 0 0 4px; }
+  h2 { font-size: 14pt; border-bottom: 2px solid #444; padding-bottom: 2px; margin-top: 22px; page-break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 14px 0 4px; page-break-after: avoid; }
+  table { border-collapse: collapse; width: 100%; margin: 6px 0 10px; font-size: 9.5pt; page-break-inside: auto; }
+  th, td { border: 1px solid #999; padding: 3px 6px; text-align: left; vertical-align: top; }
+  th { background: #e8e8e8; }
+  tr { page-break-inside: avoid; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: 9.5pt; background: #f1f1f1; padding: 0 2px; }
+  pre { font-family: Consolas, "Courier New", monospace; font-size: 8.6pt; line-height: 1.3; background: #f6f6f6;
+        border: 1px solid #ccc; padding: 6px 8px; white-space: pre-wrap; word-break: break-word; margin: 4px 0 10px; }
+  .capa { text-align: center; padding-top: 60mm; page-break-after: always; }
+  .capa .inst { font-size: 12pt; }
+  .capa h1 { font-size: 26pt; margin: 40px 0 6px; }
+  .capa .sub { font-size: 13pt; color: #444; }
+  .capa .nomes { margin-top: 50px; font-size: 12pt; line-height: 1.6; }
+  .capa .rodape { margin-top: 60px; }
+  .nota { background: #fff7d6; border-left: 4px solid #d9a400; padding: 4px 8px; }
+  .preencher { background: #ffe066; font-weight: bold; }
+  .quebra { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<div class="capa">
+  <div class="inst">UNIJUÍ — Universidade Regional do Noroeste do Estado do Rio Grande do Sul<br>
+  Linguagens Formais e Compiladores (GRP00543) — 2026/2º<br>
+  Prof. Marcos Ronaldo Melo Cavalheiro</div>
+  <h1>Gambiarra → C</h1>
+  <div class="sub">Trabalho Prático 1 — Relatório Técnico de Especificação<br>
+  Projeto e implementação de uma linguagem de programação temática e de um transpilador</div>
+  <div class="nomes">Eduardo Manhabosco<br>Rafael<br>Felipe<br>Gabriel</div>
+  <div class="rodape">Ijuí, 25/09/2026</div>
+</div>
+
+<h2>1. Tema e objetivos</h2>
+<p><b>Gambiarra</b> é uma linguagem pequena com o vocabulário do "conserto improvisado": o programa é uma
+<code>gambiarra</code>, cada variável é um <code>remendo</code>, e os valores lógicos são <code>firme</code>
+(verdadeiro) e <code>quebrado</code> (falso). O transpilador, escrito em Python, traduz um programa
+<code>.gam</code> para <b>C</b> (a linguagem destino de referência do enunciado), que depois é compilado com o gcc.</p>
+<p><b>Objetivos:</b> formalizar o léxico (alfabeto Σ, tokens e expressões regulares) e a sintaxe (GLC em EBNF);
+implementar à mão o analisador léxico e o parser por descida recursiva, com construção da AST; fazer uma
+análise semântica com tabela de símbolos, escopo e tipos; e gerar C que preserva o comportamento do programa.</p>
+<pre>// Teste 01: declaração, atribuição e saída (enunciado §8).
+gambiarra {
+    remendo fita = 10;          // inteiro (deduzido do valor)
+    remendo cola = 2.5;         // real
+    remendo ligado = firme;     // lógico
+
+    fita = fita + 5;
+    cola = cola * 2;
+
+    mostra(&quot;fita: &quot;, fita);
+    mostra(&quot;cola: &quot;, cola);
+    mostra(&quot;ligado: &quot;, ligado);
+    mostra(&quot;Sistema Gambiarra iniciado&quot;);
+}
+/* Saída esperada do programa:
+fita: 15
+cola: 5
+ligado: firme
+Sistema Gambiarra iniciado
+*/</pre>
+
+<h3>1.1 Comandos da linguagem</h3>
+<table>
+<tr><th>Gambiarra</th><th>Significado</th><th>C gerado</th></tr>
+<tr><td><code>gambiarra { ... }</code></td><td>início e fim do programa</td><td><code>int main(void) { ... return 0; }</code></td></tr>
+<tr><td><code>remendo x = valor;</code></td><td>declaração; o tipo vem do valor</td><td><code>int</code> / <code>float</code> / <code>int</code> (lógico)</td></tr>
+<tr><td><code>x = valor;</code></td><td>atribuição</td><td><code>v_x = ...;</code></td></tr>
+<tr><td><code>mostra(a, b, ...);</code></td><td>saída de vários itens; pula linha no fim</td><td><code>printf("...\n", ...);</code></td></tr>
+<tr><td><code>pega(x);</code></td><td>entrada de inteiro ou real</td><td><code>scanf("%d" / "%f", &amp;v_x);</code></td></tr>
+<tr><td><code>se (c) { } senao { }</code></td><td>decisão com alternativa</td><td><code>if (c) { } else { }</code></td></tr>
+<tr><td><code>enquanto (c) { }</code></td><td>repetição controlada por expressão lógica</td><td><code>while (c) { }</code></td></tr>
+<tr><td><code>firme</code> / <code>quebrado</code></td><td>verdadeiro / falso</td><td><code>1</code> / <code>0</code></td></tr>
+<tr><td><code>+ - * / %</code>, <code>== != &gt; &gt;= &lt; &lt;=</code>, <code>&amp;&amp; || !</code></td><td>operadores</td><td>os mesmos</td></tr>
+<tr><td><code>// ...</code> e <code>/* ... */</code></td><td>comentários</td><td>—</td></tr>
+</table>
+<p>Escopo mínimo do enunciado (§1): três tipos primitivos (inteiro, real, lógico); declaração e atribuição;
+<code>+ - * /</code> com precedência e parênteses; operadores relacionais; <code>se/senao</code>; <code>enquanto</code>;
+<code>pega</code> e <code>mostra</code>; programa e blocos delimitados por <code>gambiarra { }</code> e <code>{ }</code>.</p>
+
+<h2>2. Três decisões próprias de projeto</h2>
+<p><b>1. Declaração sem tipo escrito, com tipo deduzido do valor.</b> Na BIRL-Lite o tipo vem antes do nome
+(<code>MONSTRO x = 3;</code>) e o valor é opcional. Na Gambiarra escreve-se <code>remendo x = 3;</code>: o valor é
+<b>obrigatório</b> e a variável recebe o tipo dele (<code>3</code> → inteiro, <code>2.5</code> → real,
+<code>firme</code> → lógico). A tipagem continua <b>estática</b>: o tipo é fixado na declaração e conferido pela
+semântica (regras R7 e R12). <i>Justificativa:</i> há menos palavras reservadas, nenhuma variável existe sem valor
+(no C não sobra variável sem inicialização) e o tipo nunca contradiz o valor inicial.</p>
+<p><b>2. Blocos delimitados por chaves obrigatórias.</b> A BIRL-Lite fecha programa, <i>if</i> e <i>while</i> com a
+mesma palavra (<code>BIRL</code>). Na Gambiarra, todo bloco (programa, <code>se</code>, <code>senao</code>,
+<code>enquanto</code>) é delimitado por <code>{ }</code>, sempre. <i>Justificativa:</i> fica visível onde cada bloco
+começa e termina, e o fechamento explícito elimina a ambiguidade do "else pendurado": cada <code>senao</code> vem
+logo depois do <code>}</code> do seu <code>se</code>.</p>
+<p><b>3. Saída com vários itens e quebra de linha automática.</b> A BIRL-Lite mostra um item por comando e exige
+<code>\n</code> no texto. Na Gambiarra, <code>mostra("total: ", x, " de ", y);</code> mistura textos e expressões
+separados por vírgula, e cada <code>mostra</code> termina a linha. <i>Justificativa:</i> ninguém esquece o
+<code>\n</code>, e o gerador monta um único <code>printf</code>, escolhendo o formato de cada item pelo tipo
+calculado na semântica (<code>%d</code>, <code>%g</code>, <code>firme/quebrado</code>).</p>
+<p>Outras diferenças em relação à BIRL-Lite: tipo lógico, operadores lógicos <code>&amp;&amp; || !</code> na
+gramática, operador <code>%</code>, menos unário e comentários de linha e de bloco.</p>
+
+<h2>3. Especificação léxica</h2>
+<h3>3.1 Alfabeto Σ</h3>
+<p>Σ = { a–z, A–Z (sem acento) } ∪ { 0–9 } ∪ { <code>_ " . , ; ( ) { } + - * / % = ! &lt; &gt; &amp; | \</code> } ∪
+{ espaço, tabulação, quebra de linha }. Dentro de um texto ou de um comentário, qualquer caractere é aceito
+(inclusive acentos). Um programa é uma palavra de Σ*. Cada categoria de token é uma <b>linguagem regular</b>
+sobre Σ, descrita por uma expressão regular (Menezes, 2011, cap. 3), e o léxico reconhece essas palavras dentro do
+programa. Um símbolo fora de Σ (ex.: <code>@</code>, <code>#</code>, <code>ç</code>) é erro léxico.</p>
+
+<h3>3.2 Tabela de tokens</h3>
+<p>Notação das ER: a do Python/JFlex (<code>|</code> = união, <code>*</code> = zero ou mais, <code>+</code> = um ou
+mais, <code>[ ]</code> = classe de caracteres). Nos slides da Aula 3, a união aparece como <code>+</code>.</p>
+<table>
+<tr><th>Categoria</th><th>Token</th><th>ER / padrão</th><th>Lexema de exemplo</th><th>Descrição</th></tr>
+<tr><td>palavra reservada</td><td>GAMBIARRA, REMENDO, MOSTRA, PEGA, SE, SENAO, ENQUANTO</td><td>a própria palavra</td><td><code>remendo</code></td><td>programa, declaração, saída, entrada, decisão, repetição</td></tr>
+<tr><td>literal lógico</td><td>FIRME, QUEBRADO</td><td><code>firme</code> | <code>quebrado</code></td><td><code>firme</code></td><td>verdadeiro / falso</td></tr>
+<tr><td>identificador</td><td>ID</td><td><code>[a-zA-Z_][a-zA-Z0-9_]*</code></td><td><code>fita_2</code></td><td>nome de variável; diferencia maiúsculas</td></tr>
+<tr><td>número inteiro</td><td>NUM_INT</td><td><code>[0-9]+</code></td><td><code>42</code></td><td>inteiro sem sinal</td></tr>
+<tr><td>número real</td><td>NUM_REAL</td><td><code>[0-9]+\.[0-9]+</code></td><td><code>10.5</code></td><td>exatamente um ponto, com dígitos dos dois lados</td></tr>
+<tr><td>texto</td><td>TEXTO</td><td><code>"([^"\\\n] | \\[nt"\\])*"</code></td><td><code>"oi\n"</code></td><td>só no <code>mostra</code>; escapes <code>\n \t \" \\</code></td></tr>
+<tr><td>aritmético</td><td>MAIS, MENOS, VEZES, DIVIDE, RESTO</td><td><code>+ - * / %</code></td><td><code>*</code></td><td>operações aritméticas</td></tr>
+<tr><td>atribuição</td><td>ATRIB</td><td><code>=</code></td><td><code>=</code></td><td>guarda um valor</td></tr>
+<tr><td>relacional</td><td>IGUAL_IGUAL, DIFERENTE, MAIOR, MAIOR_IGUAL, MENOR, MENOR_IGUAL</td><td><code>== != &gt; &gt;= &lt; &lt;=</code></td><td><code>&gt;=</code></td><td>comparações</td></tr>
+<tr><td>lógico</td><td>E_LOGICO, OU_LOGICO, NAO_LOGICO</td><td><code>&amp;&amp; || !</code></td><td><code>&amp;&amp;</code></td><td>e, ou, não</td></tr>
+<tr><td>delimitador</td><td>ABRE_PAREN, FECHA_PAREN, ABRE_CHAVE, FECHA_CHAVE, PONTO_VIRGULA, VIRGULA</td><td><code>( ) { } ; ,</code></td><td><code>{</code></td><td>agrupamento, blocos e separação</td></tr>
+<tr><td>ignorado</td><td>—</td><td><code>[ \t\r\n]+</code></td><td></td><td>espaços e quebras de linha</td></tr>
+<tr><td>ignorado</td><td>—</td><td><code>//[^\n]*</code></td><td><code>// nota</code></td><td>comentário de linha</td></tr>
+<tr><td>ignorado</td><td>—</td><td><code>/\*[\s\S]*?\*/</code></td><td><code>/* ... */</code></td><td>comentário de bloco (termina no primeiro <code>*/</code>)</td></tr>
+</table>
+
+<h3>3.3 Como o léxico resolve os conflitos</h3>
+<p>O léxico (<code>lexico.py</code>) tem uma tabela de regras <i>(nome, expressão regular)</i>, testada <b>em ordem</b>
+a cada posição do texto. A primeira que casa ganha, e o lexema vira token (ou é ignorado, ou vira erro).</p>
+<ul>
+<li><b>Palavra reservada × identificador:</b> <code>se</code> casa com a ER de ID; depois o léxico consulta a
+tabela <code>PALAVRAS_RESERVADAS</code> e, se o lexema está nela, o token vira <code>SE</code>. Por isso
+<code>sera</code> continua sendo identificador.</li>
+<li><b>Maior casamento (longest match):</b> <code>== != &gt;= &lt;= &amp;&amp; ||</code> vêm antes de
+<code>= ! &gt; &lt;</code>. Sem isso, <code>==</code> viraria dois tokens <code>=</code>. NUM_REAL também vem antes
+de NUM_INT.</li>
+<li><b>Fim do número:</b> NUM_INT e NUM_REAL exigem que o número acabe ali (<code>(?![\w.])</code>). Sem isso,
+<code>2abc</code> viraria <code>NUM(2) ID(abc)</code> e <code>3.4.5</code> viraria <code>NUM(3.4)</code> + resto.</li>
+<li><b>Posição:</b> cada token guarda linha e coluna. A cada lexema, a coluna avança o tamanho dele; se houver
+quebra de linha, a linha avança e a coluna recomeça.</li>
+<li><b>Erros:</b> regras de erro (número malformado, identificador com acento, texto sem fechar, escape
+inválido, comentário sem fechar e o "pega-tudo" <code>.</code>) registram <b>linha, coluna e lexema</b> e a leitura
+<b>continua</b>. Se houver erro léxico, o parser não roda.</li>
+</ul>
+
+<h2>4. Especificação sintática: G = (V, T, P, S)</h2>
+<p><b>V</b> = { Programa, Bloco, Instrucao, Declaracao, Atribuicao, Leitura, Escrita, Item, Condicional, Repeticao,
+Expressao, ExprE, ExprRel, OpRel, ExprAdit, Termo, Unario, Fator }<br>
+<b>T</b> = { gambiarra, remendo, mostra, pega, se, senao, enquanto, firme, quebrado, id, num_int, num_real, texto,
+<code>+ - * / % = == != &gt; &gt;= &lt; &lt;= &amp;&amp; || ! ( ) { } ; ,</code> }<br>
+<b>S</b> = Programa<br>
+<b>P</b> (EBNF: <code>{ }</code> zero ou mais, <code>[ ]</code> opcional, <code>( | )</code> agrupamento,
+<code>"x"</code> terminal):</p>
+<pre>&lt;Programa&gt;    ::= "gambiarra" &lt;Bloco&gt;
+&lt;Bloco&gt;       ::= "{" { &lt;Instrucao&gt; } "}"
+&lt;Instrucao&gt;   ::= &lt;Declaracao&gt; | &lt;Atribuicao&gt; | &lt;Leitura&gt; | &lt;Escrita&gt;
+                | &lt;Condicional&gt; | &lt;Repeticao&gt;
+&lt;Declaracao&gt;  ::= "remendo" id "=" &lt;Expressao&gt; ";"
+&lt;Atribuicao&gt;  ::= id "=" &lt;Expressao&gt; ";"
+&lt;Leitura&gt;     ::= "pega" "(" id ")" ";"
+&lt;Escrita&gt;     ::= "mostra" "(" &lt;Item&gt; { "," &lt;Item&gt; } ")" ";"
+&lt;Item&gt;        ::= texto | &lt;Expressao&gt;
+&lt;Condicional&gt; ::= "se" "(" &lt;Expressao&gt; ")" &lt;Bloco&gt; [ "senao" &lt;Bloco&gt; ]
+&lt;Repeticao&gt;   ::= "enquanto" "(" &lt;Expressao&gt; ")" &lt;Bloco&gt;
+&lt;Expressao&gt;   ::= &lt;ExprE&gt; { "||" &lt;ExprE&gt; }
+&lt;ExprE&gt;       ::= &lt;ExprRel&gt; { "&amp;&amp;" &lt;ExprRel&gt; }
+&lt;ExprRel&gt;     ::= &lt;ExprAdit&gt; [ &lt;OpRel&gt; &lt;ExprAdit&gt; ]
+&lt;OpRel&gt;       ::= "==" | "!=" | "&gt;" | "&gt;=" | "&lt;" | "&lt;="
+&lt;ExprAdit&gt;    ::= &lt;Termo&gt; { ( "+" | "-" ) &lt;Termo&gt; }
+&lt;Termo&gt;       ::= &lt;Unario&gt; { ( "*" | "/" | "%" ) &lt;Unario&gt; }
+&lt;Unario&gt;      ::= ( "!" | "-" ) &lt;Unario&gt; | &lt;Fator&gt;
+&lt;Fator&gt;       ::= num_int | num_real | "firme" | "quebrado" | id | "(" &lt;Expressao&gt; ")"</pre>
+
+<h3>4.1 Precedência, associatividade e ausência de ambiguidade</h3>
+<p>Cada nível de precedência é uma variável da gramática: quanto mais fraco o operador, mais perto da raiz fica a
+regra dele. Os parênteses (em <code>&lt;Fator&gt;</code>) são o único jeito de "furar" os níveis.</p>
+<table>
+<tr><th>Nível</th><th>Operadores</th><th>Variável</th><th>Associatividade</th></tr>
+<tr><td>1 (mais fraco)</td><td><code>||</code></td><td>Expressao</td><td>esquerda</td></tr>
+<tr><td>2</td><td><code>&amp;&amp;</code></td><td>ExprE</td><td>esquerda</td></tr>
+<tr><td>3</td><td><code>== != &gt; &gt;= &lt; &lt;=</code></td><td>ExprRel</td><td>não associativo (<code>a &lt; b &lt; c</code> é erro sintático)</td></tr>
+<tr><td>4</td><td><code>+ -</code></td><td>ExprAdit</td><td>esquerda (<code>10 - 3 - 2 = 5</code>)</td></tr>
+<tr><td>5</td><td><code>* / %</code></td><td>Termo</td><td>esquerda</td></tr>
+<tr><td>6</td><td><code>!</code> e <code>-</code> unários</td><td>Unario</td><td>direita (<code>- -3 = 3</code>)</td></tr>
+<tr><td>7 (mais forte)</td><td>número, variável, <code>firme</code>, <code>quebrado</code>, <code>( )</code></td><td>Fator</td><td>—</td></tr>
+</table>
+<p>É a mesma ordem do C, por isso o C gerado se comporta igual. <b>Sem recursão à esquerda:</b> a forma
+<code>A → A op B</code> (que associa à esquerda, mas faria a descida recursiva chamar a si mesma sem consumir
+token) foi escrita como <code>A → B { op B }</code>, que no parser é um <code>while</code> que junta cada termo novo
+à esquerda da árvore já montada. <b>LL(1):</b> as alternativas de <code>&lt;Instrucao&gt;</code> começam com tokens
+diferentes (<code>remendo</code>, id, <code>pega</code>, <code>mostra</code>, <code>se</code>, <code>enquanto</code>),
+e em <code>&lt;Item&gt;</code> o token texto não pertence a PRIMEIROS(<code>&lt;Expressao&gt;</code>). Por isso basta
+espiar um token para escolher a regra.</p>
+
+<h3>4.2 Árvore de derivação e AST de <code>2 + 3 * 4</code></h3>
+<p>Programa <code>exemplos/precedencia.gam</code>, saída real de
+<code>python transpilador.py exemplos/precedencia.gam --derivacao --ast --executar</code>:</p>
+<pre>// Exemplo curto para mostrar a precedencia (relatorio e demo).
+gambiarra {
+    remendo r = 2 + 3 * 4;
+    mostra(r);
+}</pre>
+<pre>
+===== ÁRVORE DE DERIVAÇÃO =====
+&lt;Programa&gt;
+├─ gambiarra
+├─ &lt;Bloco&gt;
+│  ├─ {
+│  ├─ &lt;Instrucao&gt;
+│  │  └─ &lt;Declaracao&gt;
+│  │     ├─ remendo
+│  │     ├─ id (r)
+│  │     ├─ =
+│  │     ├─ &lt;Expressao&gt;
+│  │     │  └─ &lt;ExprE&gt;
+│  │     │     └─ &lt;ExprRel&gt;
+│  │     │        └─ &lt;ExprAdit&gt;
+│  │     │           ├─ &lt;Termo&gt;
+│  │     │           │  └─ &lt;Unario&gt;
+│  │     │           │     └─ &lt;Fator&gt;
+│  │     │           │        └─ num_int (2)
+│  │     │           ├─ +
+│  │     │           └─ &lt;Termo&gt;
+│  │     │              ├─ &lt;Unario&gt;
+│  │     │              │  └─ &lt;Fator&gt;
+│  │     │              │     └─ num_int (3)
+│  │     │              ├─ *
+│  │     │              └─ &lt;Unario&gt;
+│  │     │                 └─ &lt;Fator&gt;
+│  │     │                    └─ num_int (4)
+│  │     └─ ;
+│  ├─ &lt;Instrucao&gt;
+│  │  └─ &lt;Escrita&gt;
+│  │     ├─ mostra
+│  │     ├─ (
+│  │     ├─ &lt;Item&gt;
+│  │     │  └─ &lt;Expressao&gt;
+│  │     │     └─ &lt;ExprE&gt;
+│  │     │        └─ &lt;ExprRel&gt;
+│  │     │           └─ &lt;ExprAdit&gt;
+│  │     │              └─ &lt;Termo&gt;
+│  │     │                 └─ &lt;Unario&gt;
+│  │     │                    └─ &lt;Fator&gt;
+│  │     │                       └─ id (r)
+│  │     ├─ )
+│  │     └─ ;
+│  └─ }
+└─ FIM (fim do arquivo)
+
+===== AST =====
+Programa
+├─ Declaracao(r = (2 + (3 * 4)))
+└─ Print(r)
+
+OK: sem erros. C gerado em gerados/precedencia.c
+
+===== EXECUÇÃO =====
+14</pre>
+<p>O <code>*</code> ficou dentro de um <code>&lt;Termo&gt;</code>, mais fundo que o <code>+</code>, então é
+calculado primeiro: <code>2 + (3 * 4) = 14</code>. A AST guarda só a estrutura (<code>(2 + (3 * 4))</code>), sem
+<code>;</code>, chaves ou variáveis intermediárias. A precedência está na própria árvore, e o gerador não
+"conserta" nada.</p>
+
+<h2>5. Analisador sintático e AST</h2>
+<p><code>parser.py</code> implementa um parser por <b>descida recursiva</b>: cada regra da EBNF é uma função
+(<code>programa()</code>, <code>bloco()</code>, <code>declaracao()</code>, ..., <code>fator()</code>). Na EBNF,
+<code>&lt;Nome&gt;</code> vira uma chamada de função, <code>{ }</code> vira <code>while</code>, <code>[ ]</code> vira
+<code>if</code> e um terminal vira <code>consome(TIPO)</code>. As duas ferramentas básicas são
+<code>proximo()</code>, que espia o tipo do token atual, e <code>consome(tipo)</code>, que confere o token e avança.
+Cada função devolve um nó da AST (<code>ast_nos.py</code>: <code>Declaracao</code>, <code>Atribuicao</code>,
+<code>Leitura</code>, <code>Escrita</code>, <code>Se</code>, <code>Enquanto</code>, <code>Binario</code>,
+<code>Unario</code>, literais e <code>Variavel</code>), com linha e coluna. O parser também registra as regras chamadas
+e os tokens consumidos, para imprimir a árvore de derivação (<code>--derivacao</code>).</p>
+<p><b>Erro sintático:</b> o parser para no primeiro erro e informa linha, coluna, token encontrado e o que era
+esperado. Um <code>;</code> esquecido é apontado no fim da linha onde ele falta, e não no token da linha
+seguinte.</p>
+
+<h2>6. Análise semântica</h2>
+<p><code>semantico.py</code> percorre a AST <b>depois</b> do parser. Ele mantém a <b>tabela de símbolos</b> (nome →
+tipo, linha da declaração, nome no C) como uma pilha de escopos: cada bloco empilha um escopo ao entrar e o
+desempilha ao sair. Declarar olha só o topo da pilha; procurar vai do topo para baixo. Ele calcula o tipo de cada
+expressão de baixo para cima (literal pelo formato, variável pela tabela, operação pelas regras abaixo) e
+<b>lista todos os erros</b>. Com qualquer erro, o C não é gerado.</p>
+<table>
+<tr><th>Regra</th><th>Descrição</th><th>Exemplo de violação</th></tr>
+<tr><td>R1</td><td>variável só pode ser usada depois de declarada</td><td><code>mostra(pontos);</code> sem declarar</td></tr>
+<tr><td>R2</td><td>não pode declarar duas vezes no mesmo escopo</td><td><code>remendo x = 1; remendo x = 2;</code></td></tr>
+<tr><td>R3</td><td>escopo por bloco: <code>se</code>, <code>senao</code> e <code>enquanto</code> têm o seu</td><td>usar fora do <code>se</code> uma variável declarada dentro dele</td></tr>
+<tr><td>R4</td><td>sombreamento permitido: um bloco interno pode redeclarar um nome de fora</td><td>— (é válido)</td></tr>
+<tr><td>R5</td><td><code>+ - * /</code> só com números; inteiro com inteiro dá inteiro; com um real, dá real. <code>%</code> só com inteiros</td><td><code>peso % 2</code> com <code>peso</code> real</td></tr>
+<tr><td>R6</td><td><code>&gt; &gt;= &lt; &lt;=</code> só com números; <code>== !=</code> entre números ou entre lógicos; <code>&amp;&amp; || !</code> só com lógicos; <code>-</code> unário só com números</td><td><code>ligado + 1</code></td></tr>
+<tr><td>R7</td><td>atribuição: real ← inteiro vale (promoção); inteiro ← real não; número ↔ lógico não</td><td><code>vidas = 2.5;</code> com <code>vidas</code> inteiro</td></tr>
+<tr><td>R8</td><td><code>/</code> entre inteiros é divisão inteira (<code>7 / 2 = 3</code>), como no C</td><td>—</td></tr>
+<tr><td>R9</td><td>na declaração, o valor é conferido antes de o nome existir</td><td><code>remendo x = x + 1;</code> sem outro <code>x</code></td></tr>
+<tr><td>R10</td><td>a condição de <code>se</code>/<code>enquanto</code> tem que ser lógica</td><td><code>se (vidas) { }</code></td></tr>
+<tr><td>R11</td><td><code>pega</code> só lê variável inteira ou real, já declarada</td><td><code>pega(ligado);</code> com <code>ligado</code> lógico</td></tr>
+<tr><td>R12</td><td>a variável fica com o tipo do valor inicial, e ele não muda</td><td>(é o que dá sentido à R7)</td></tr>
+</table>
+<p class="nota"><b>Por que separar da sintaxe:</b> <code>mostra(x);</code> e <code>mostra(y);</code> viram a
+mesma sequência de tokens (<code>mostra ( id ) ;</code>). O parser não tem como saber se <code>y</code> foi
+declarada; quem sabe é a tabela de símbolos. "Declarar antes de usar" depende de contexto.</p>
+
+<h2>7. Geração de código C</h2>
+<p><code>gerador.py</code> só roda se léxico, parser e semântica passaram. Ele <b>percorre a AST</b> (não faz
+substituição de texto): cada tipo de nó tem uma função que escreve o C equivalente. Os tipos viram inteiro →
+<code>int</code>, real → <code>float</code> (o <code>scanf</code> usa <code>%f</code>) e lógico → <code>int</code>
+(0/1). As variáveis ganham o prefixo <code>v_</code>, para um nome como <code>int</code> não quebrar o C. Toda
+operação ganha parênteses. <code>mostra</code> vira um único <code>printf</code>: <code>%d</code> para inteiro,
+<code>%g</code> para real, <code>%s</code> para texto e para lógico (impresso como <code>firme</code>/<code>quebrado</code>),
+com <code>\n</code> no fim. <code>pega</code> vira <code>scanf</code> com <code>%d</code> ou <code>%f</code>.</p>
+<p><b>Sombreamento:</b> dentro de um bloco, <code>remendo x = x + 1;</code> deve ler o <code>x</code> de fora (R9).
+No C, <code>int v_x = v_x + 1;</code> leria o <code>x</code> novo, ainda sem valor. Por isso a semântica dá à
+variável de dentro outro nome (<code>v_x_2</code>), e o comportamento é preservado (teste 07).</p>
+<h3>7.1 Exemplo completo: <code>testes/02_valido_completo.gam</code></h3>
+<pre>// Teste 02: condicional, repetição, entrada/saída e precedência (enunciado §8).
+// A entrada (o que o &#x27;pega&#x27; lê) está em 02_valido_completo.entrada.txt: 4
+gambiarra {
+    remendo limite = 0;
+    mostra(&quot;Quantos remendos?&quot;);
+    pega(limite);
+
+    // precedência: * antes de +, e os parênteses mudam a ordem
+    remendo a = 2 + 3 * 4;          // 14
+    remendo b = (2 + 3) * 4;        // 20
+    remendo c = 10 - 3 - 2;         // 5 (associatividade à esquerda)
+    remendo d = 7 / 2;              // 3 (divisão inteira, regra R8)
+    remendo e = 7 % 2;              // 1
+    remendo media = (a + b) / 4.0;  // 8.5 (inteiro com real dá real, regra R5)
+    mostra(&quot;a = &quot;, a, &quot;, b = &quot;, b, &quot;, c = &quot;, c);
+    mostra(&quot;d = &quot;, d, &quot;, e = &quot;, e, &quot;, media = &quot;, media);
+
+    remendo contador = 1;
+    remendo soma = 0;
+    enquanto (contador &lt;= limite) {
+        soma = soma + contador;
+        mostra(&quot;remendo &quot;, contador, &quot; aplicado&quot;);
+        contador = contador + 1;
+    }
+    mostra(&quot;soma = &quot;, soma);
+
+    remendo firmeza = soma &gt; 5 &amp;&amp; !(limite == 0);
+    se (firmeza || quebrado) {
+        mostra(&quot;A gambiarra esta firme: &quot;, firmeza);
+    } senao {
+        mostra(&quot;A gambiarra quebrou&quot;);
+    }
+}
+/* Saída esperada do programa (com a entrada 4):
+Quantos remendos?
+a = 14, b = 20, c = 5
+d = 3, e = 1, media = 8.5
+remendo 1 aplicado
+remendo 2 aplicado
+remendo 3 aplicado
+remendo 4 aplicado
+soma = 10
+A gambiarra esta firme: firme
+*/</pre>
+<p>C gerado (<code>gerados/02_valido_completo.c</code>):</p>
+<pre>#include &lt;stdio.h&gt;
+
+int main(void) {
+    int v_limite = 0;
+    printf(&quot;%s\n&quot;, &quot;Quantos remendos?&quot;);
+    scanf(&quot;%d&quot;, &amp;v_limite);
+    int v_a = 2 + (3 * 4);
+    int v_b = (2 + 3) * 4;
+    int v_c = (10 - 3) - 2;
+    int v_d = 7 / 2;
+    int v_e = 7 % 2;
+    float v_media = (v_a + v_b) / 4.0f;
+    printf(&quot;%s%d%s%d%s%d\n&quot;, &quot;a = &quot;, v_a, &quot;, b = &quot;, v_b, &quot;, c = &quot;, v_c);
+    printf(&quot;%s%d%s%d%s%g\n&quot;, &quot;d = &quot;, v_d, &quot;, e = &quot;, v_e, &quot;, media = &quot;, v_media);
+    int v_contador = 1;
+    int v_soma = 0;
+    while (v_contador &lt;= v_limite) {
+        v_soma = v_soma + v_contador;
+        printf(&quot;%s%d%s\n&quot;, &quot;remendo &quot;, v_contador, &quot; aplicado&quot;);
+        v_contador = v_contador + 1;
+    }
+    printf(&quot;%s%d\n&quot;, &quot;soma = &quot;, v_soma);
+    int v_firmeza = (v_soma &gt; 5) &amp;&amp; (!(v_limite == 0));
+    if (v_firmeza || 0) {
+        printf(&quot;%s%s\n&quot;, &quot;A gambiarra esta firme: &quot;, (v_firmeza ? &quot;firme&quot; : &quot;quebrado&quot;));
+    } else {
+        printf(&quot;%s\n&quot;, &quot;A gambiarra quebrou&quot;);
+    }
+    return 0;
+}</pre>
+<p>Execução (entrada do teclado: <code>4</code>):</p>
+<pre>OK: sem erros. C gerado em gerados/02_valido_completo.c
+
+===== EXECUÇÃO =====
+Quantos remendos?
+a = 14, b = 20, c = 5
+d = 3, e = 1, media = 8.5
+remendo 1 aplicado
+remendo 2 aplicado
+remendo 3 aplicado
+remendo 4 aplicado
+soma = 10
+A gambiarra esta firme: firme</pre>
+
+<h2>8. Tratamento de erros</h2>
+<table>
+<tr><th>Categoria</th><th>Quando</th><th>Resposta</th></tr>
+<tr><td>Léxico</td><td>símbolo fora de Σ, número ou identificador malformado, texto ou comentário sem fechar</td><td>linha, coluna e lexema; continua lendo e lista todos; não chama o parser</td></tr>
+<tr><td>Sintático</td><td>tokens válidos numa ordem que a gramática não gera</td><td>linha, coluna, token encontrado e esperado; para no primeiro</td></tr>
+<tr><td>Semântico</td><td>violação de R1 a R12</td><td>linha, coluna, nome da variável e regra violada; lista todos; não gera C</td></tr>
+</table>
+<h3>8.1 Erro léxico — <code>testes/03_erro_lexico.gam</code></h3>
+<pre>// Teste 03: erros léxicos (enunciado §7 e EI03 P4b). O léxico reporta TODOS e continua lendo.
+gambiarra {
+    remendo x = 10;
+    mostra(x @ 2);
+    remendo 2abc = 5;
+    remendo y = 3.4.5;
+    remendo preço = 1;
+    x = x &amp; 1;
+    mostra(&quot;texto sem fechar);
+    remendo z = 5.;
+}
+/* comentário de bloco que nunca fecha</pre>
+<pre>===== ERROS LÉXICOS =====
+Erro léxico [linha 4, coluna 14]: caractere que não pertence à linguagem: &#x27;@&#x27;
+Erro léxico [linha 5, coluna 13]: número malformado (inteiro: 10; real: 10.5; nome não começa com dígito): &#x27;2abc&#x27;
+Erro léxico [linha 6, coluna 17]: número malformado (inteiro: 10; real: 10.5; nome não começa com dígito): &#x27;3.4.5&#x27;
+Erro léxico [linha 7, coluna 13]: identificador com caractere inválido (use só letras sem acento, dígitos e _): &#x27;preço&#x27;
+Erro léxico [linha 8, coluna 11]: caractere que não pertence à linguagem: &#x27;&amp;&#x27;
+Erro léxico [linha 9, coluna 12]: texto sem fechar aspas (o texto não pode quebrar linha): &#x27;&quot;texto sem fechar);&#x27;
+Erro léxico [linha 10, coluna 17]: número malformado (inteiro: 10; real: 10.5; nome não começa com dígito): &#x27;5.&#x27;
+Erro léxico [linha 12, coluna 1]: comentário de bloco &#x27;/*&#x27; aberto e nunca fechado com &#x27;*/&#x27;: &#x27;/* comentário de bloco que nun...&#x27;
+
+8 erro(s) léxico(s). Processamento interrompido.</pre>
+<h3>8.2 Erros sintáticos — <code>04_erro_sintatico.gam</code> e <code>04b_erro_sintatico_expressao.gam</code></h3>
+<pre>// Teste 04: erro sintático (enunciado §8). Falta o &#x27;;&#x27; no fim da linha 4.
+gambiarra {
+    remendo x = 10;
+    remendo y = x * 2
+    mostra(y);
+}</pre>
+<pre>===== ERRO SINTÁTICO =====
+Erro sintático [linha 4, coluna 22]: esperava &#x27;;&#x27; depois de &#x27;2&#x27; (fim da linha 4), mas encontrei &#x27;mostra&#x27; na linha 5
+
+Processamento interrompido.</pre>
+<pre>// Teste 04b: erro sintático do enunciado §7: declaração termina sem expressão após &#x27;=&#x27;.
+gambiarra {
+    remendo total = ;
+    mostra(total);
+}</pre>
+<pre>===== ERRO SINTÁTICO =====
+Erro sintático [linha 3, coluna 21]: esperava um valor (número, variável, firme, quebrado ou &#x27;(&#x27;), mas encontrei &#x27;;&#x27;
+
+Processamento interrompido.</pre>
+<h3>8.3 Erros semânticos — <code>testes/05_erro_semantico.gam</code></h3>
+<pre>// Teste 05: erros semânticos (enunciado §5 e §8). A semântica lista TODOS e não gera o C.
+gambiarra {
+    remendo vidas = 3;
+    remendo peso = 2.5;
+    remendo ligado = firme;
+
+    mostra(pontos);              // R1: usada sem declarar
+    total = 10;                  // R1: atribuição sem declarar
+    remendo vidas = 5;           // R2: declarada duas vezes no mesmo escopo
+    vidas = peso;                // R7: inteiro não recebe real
+    ligado = 1;                  // R7: lógico não recebe número
+    remendo resto = peso % 2;    // R5: % só entre inteiros
+    se (vidas) {                 // R10: condição tem que ser lógica
+        mostra(&quot;nunca&quot;);
+    }
+    enquanto (ligado + 1 &gt; 0) {  // R5: lógico não entra em conta
+        pega(ligado);            // R11: pega não lê lógico
+    }
+    remendo x = x + 1;           // R9: o x ainda não existe
+}</pre>
+<pre>===== ERROS SEMÂNTICOS =====
+Erro semântico [linha 7, coluna 12]: a variável &#x27;pontos&#x27; foi usada antes de ser declarada (regra R1)
+Erro semântico [linha 8, coluna 5]: atribuição à variável &#x27;total&#x27;, que não foi declarada (regra R1: declare antes com &#x27;remendo total = ...;&#x27;)
+Erro semântico [linha 9, coluna 13]: a variável &#x27;vidas&#x27; já foi declarada neste escopo, na linha 3 (regra R2: não pode declarar duas vezes no mesmo escopo)
+Erro semântico [linha 10, coluna 5]: a variável &#x27;vidas&#x27; é inteiro e não pode receber um valor real (regra R7)
+Erro semântico [linha 11, coluna 5]: a variável &#x27;ligado&#x27; é logico e não pode receber um valor inteiro (regra R7)
+Erro semântico [linha 12, coluna 26]: o operador &#x27;%&#x27; só aceita inteiros, mas recebeu real e inteiro (regra R5)
+Erro semântico [linha 13, coluna 9]: a condição do &#x27;se&#x27; tem que ser lógica, mas é inteiro (regra R10; ex.: use &#x27;x &gt; 0&#x27; em vez de &#x27;x&#x27;)
+Erro semântico [linha 16, coluna 22]: o operador &#x27;+&#x27; só aceita números, mas recebeu logico e inteiro (regra R5)
+Erro semântico [linha 17, coluna 14]: pega(ligado): a variável &#x27;ligado&#x27; é lógica; pega só lê inteiro ou real (regra R11)
+Erro semântico [linha 19, coluna 17]: a variável &#x27;x&#x27; foi usada antes de ser declarada (regra R1)
+
+10 erro(s) semântico(s). O código C NÃO foi gerado.</pre>
+
+<h2>9. Suíte de testes</h2>
+<table>
+<tr><th>Arquivo</th><th>Objetivo</th></tr>
+<tr><td>01_valido_basico</td><td>declaração, atribuição e saída</td></tr>
+<tr><td>02_valido_completo</td><td>se/senao, enquanto, pega/mostra, precedência <code>2 + 3 * 4</code> e <code>(2 + 3) * 4</code>, associatividade <code>10 - 3 - 2</code>, divisão inteira, promoção</td></tr>
+<tr><td>03_erro_lexico</td><td><code>@</code>, <code>2abc</code>, <code>3.4.5</code>, <code>preço</code>, <code>&amp;</code>, <code>5.</code>, texto e comentário sem fechar</td></tr>
+<tr><td>04_erro_sintatico / 04b</td><td><code>;</code> esquecido / declaração sem expressão depois do <code>=</code> (exemplo do enunciado, §7)</td></tr>
+<tr><td>05_erro_semantico</td><td>R1, R2, R5, R7, R9, R10 e R11 no mesmo arquivo</td></tr>
+<tr><td>06_lexico_todos_tokens</td><td>todos os tipos de token válidos (só o léxico)</td></tr>
+<tr><td>07_valido_escopo</td><td>escopo por bloco e sombreamento</td></tr>
+<tr><td>08_valido_exemplo_enunciado</td><td>o exemplo <code>teste.birl</code> do enunciado, reescrito em Gambiarra</td></tr>
+<tr><td>09_valido_com_bom</td><td>arquivo salvo com BOM (Bloco de Notas/PowerShell)</td></tr>
+</table>
+<p>Cada teste tem a saída esperada em <code>.esperado.txt</code>. <code>python rodar_testes.py</code> roda o
+transpilador em cada arquivo (nos válidos, também compila com <code>gcc -Wall</code> e executa) e compara com a
+saída esperada. Resultado no momento da geração deste relatório:</p>
+<pre>OK        01_valido_basico.gam
+OK        02_valido_completo.gam
+OK        03_erro_lexico.gam
+OK        04_erro_sintatico.gam
+OK        04b_erro_sintatico_expressao.gam
+OK        05_erro_semantico.gam
+OK        06_lexico_todos_tokens.gam
+OK        07_valido_escopo.gam
+OK        08_valido_exemplo_enunciado.gam
+OK        09_valido_com_bom.gam
+
+10 de 10 testes passaram.</pre>
+<p>O C gerado de cada teste válido fica em <code>gerados/</code>.</p>
+
+<h2>10. Como executar</h2>
+<p>Pré-requisitos: Python 3.10+ (só a biblioteca padrão) e gcc.</p>
+<pre>python transpilador.py programa.gam                  (gera gerados/programa.c)
+python transpilador.py programa.gam --executar       (gera, compila com gcc e roda)
+python transpilador.py programa.gam --tokens --derivacao --ast --c
+python rodar_testes.py                               (suíte de testes)</pre>
+<p>Organização: <code>tokens.py</code> e <code>erros.py</code> (base), <code>lexico.py</code> (1),
+<code>parser.py</code> + <code>ast_nos.py</code> (2), <code>semantico.py</code> (3), <code>gerador.py</code> (4) e
+<code>transpilador.py</code> (liga as estações). Detalhes no <code>README.md</code>.</p>
+
+<h2>11. Uso de ferramentas de Inteligência Artificial</h2>
+<table>
+<tr><th>Item</th><th>Declaração</th></tr>
+<tr><td>Ferramenta</td><td>Claude Code (modelo Claude Opus 5.5, da Anthropic).</td></tr>
+<tr><td>Finalidades</td><td>(1) busca de material e explicação dos conceitos da disciplina (léxico, GLC, BNF/EBNF, derivação,
+precedência, recursão à esquerda, descida recursiva, AST, semântica, geração de código); (2) organização do
+planejamento e levantamento dos requisitos do enunciado; (3) levantamento das decisões de projeto, apresentadas
+como perguntas com opções: <b>cada decisão foi escolhida pelo grupo</b>; (4) <b>escrita do código do transpilador</b>,
+dos testes e dos rascunhos da documentação, a partir dessas decisões; (5) depuração.</td></tr>
+<tr><td>Etapas</td><td>estudo, especificação (léxico e gramática), implementação (léxico, parser, AST, semântica e
+geração), testes e documentação.</td></tr>
+<tr><td>Como verificamos</td><td>suíte com 10 testes (saídas conferidas à mão antes de virarem gabarito); o C gerado
+compila com <code>gcc -Wall</code> sem avisos e produz a saída esperada; testes extras de casos-limite (programa
+vazio, escopo, relacional encadeado, bloco sem fechar, conteúdo depois do fim, texto em expressão).
+Durante os testes foram achados e corrigidos dois problemas: arquivos com BOM eram rejeitados pelo léxico
+(teste 09) e a última folha da árvore de derivação saía vazia.</td></tr>
+<tr><td>Fontes de validação</td><td>enunciado do TP1 (v6) e textos do Classroom; slides das Aulas 02 e 03;
+documentação do módulo <code>re</code> do Python. <span class="preencher">[PREENCHER: capítulos dos livros
+efetivamente consultados]</span></td></tr>
+<tr><td>O que o grupo fez / alterou</td><td>escolha do tema, do vocabulário (vindo de um integrante) e de todas as
+decisões de projeto (tipos, sintaxe, precedência, regras semânticas, formato da saída); revisão das saídas dos
+testes. <span class="preencher">[PREENCHER: alterações feitas pelo grupo no código e no texto depois do estudo]</span></td></tr>
+</table>
+<p>O grupo é responsável por todo o conteúdo entregue, e todos os integrantes devem saber explicar cada parte.</p>
+
+<h2>12. Referências</h2>
+<p>AHO, Alfred V.; SETHI, Ravi; ULLMAN, Jeffrey D. <i>Compiladores: princípios, técnicas e ferramentas</i>. 2. ed.
+São Paulo: Pearson Addison-Wesley, 2007.<br>
+MENEZES, Paulo Blauth. <i>Linguagens formais e autômatos</i>. 6. ed. Porto Alegre: Bookman, 2011.<br>
+PRICE, Ana Maria de Alencar; TOSCANI, Simão Sirineo. <i>Implementação de linguagens de programação:
+compiladores</i>. 2. ed. Porto Alegre: Bookman, 2001.<br>
+BIRL — Bambam's "It's Show Time" Recursive Language. Disponível em: https://birl-language.github.io/.<br>
+CAVALHEIRO, Marcos R. M. <i>Trabalho Prático 1 — Projeto e Implementação de uma Linguagem de Programação
+Temática</i> (v6) e slides das Aulas 02 e 03. UNIJUÍ, 2026.<br>
+PYTHON SOFTWARE FOUNDATION. <i>re — Regular expression operations</i>. Disponível em:
+https://docs.python.org/3/library/re.html.</p>
+
+</body>
+</html>

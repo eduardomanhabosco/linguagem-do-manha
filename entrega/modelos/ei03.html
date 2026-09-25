@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>EI03 — Analisador Léxico</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #1a1a1a; }
+  h1 { font-size: 18pt; margin: 0 0 4px; }
+  h2 { font-size: 14pt; border-bottom: 2px solid #444; padding-bottom: 2px; margin-top: 22px; page-break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 14px 0 4px; page-break-after: avoid; }
+  table { border-collapse: collapse; width: 100%; margin: 6px 0 10px; font-size: 9.5pt; }
+  th, td { border: 1px solid #999; padding: 3px 6px; text-align: left; vertical-align: top; }
+  th { background: #e8e8e8; }
+  tr { page-break-inside: avoid; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: 9.5pt; background: #f1f1f1; padding: 0 2px; }
+  pre { font-family: Consolas, "Courier New", monospace; font-size: 8.6pt; line-height: 1.3; background: #f6f6f6;
+        border: 1px solid #ccc; padding: 6px 8px; white-space: pre-wrap; word-break: break-word; margin: 4px 0 10px; }
+  .cabecalho { border: 1px solid #999; padding: 8px 12px; margin-bottom: 14px; }
+  .preencher { background: #ffe066; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div class="cabecalho">
+  <h1>Estudo Independente 03 — Especificação e Implementação de um Analisador Léxico</h1>
+  <b>Componente curricular:</b> GRP00543 — Linguagens Formais e Compiladores (UNIJUÍ, 2026/2º)<br>
+  <b>Professor:</b> Marcos Ronaldo Melo Cavalheiro<br>
+  <b>Estudante(s):</b><br>{{INTEGRANTES_EI03}}<br>
+  <b>Data:</b> {{DATA}}<br>
+  <b>Linguagem:</b> Gambiarra (projeto do TP1). Implementação manual em Python, módulo <code>re</code>.
+</div>
+
+<p>A linguagem Gambiarra tem programa e blocos com <code>{ }</code>, declaração <code>remendo x = valor;</code>
+(o tipo vem do valor), saída <code>mostra(...)</code>, entrada <code>pega(x)</code>, decisão
+<code>se/senao</code>, repetição <code>enquanto</code> e os literais lógicos <code>firme</code>/<code>quebrado</code>.</p>
+<pre>{{ARQUIVO testes/01_valido_basico.gam}}</pre>
+
+<h2>Problema 1 — Especificação formal dos tokens</h2>
+<p><b>Notação:</b> expressões regulares no estilo JFlex/Python: <code>|</code> = união, <code>*</code> = zero ou
+mais, <code>+</code> = um ou mais, <code>?</code> = opcional, <code>[a-z]</code> = classe de caracteres,
+<code>[^x]</code> = qualquer caractere menos x, <code>\.</code> = o ponto literal. <i>Atenção:</i> nos slides da
+Aula 3, <code>+</code> significa união; aqui, união é <code>|</code>.</p>
+<p><b>Alfabeto:</b> Σ = { a–z, A–Z } ∪ { 0–9 } ∪ { <code>_ " . , ; ( ) { } + - * / % = ! &lt; &gt; &amp; | \</code> } ∪
+{ espaço, tab, quebra de linha }. Letras acentuadas só valem dentro de texto e de comentário.</p>
+
+<h3>a) Palavras reservadas</h3>
+<pre>RESERVADA = gambiarra | remendo | mostra | pega | se | senao | enquanto | firme | quebrado</pre>
+<p>Cada palavra é uma linguagem de uma palavra só, e a união delas é regular. São todas minúsculas e
+<b>diferenciam maiúsculas</b>: <code>Se</code> é identificador. Todas também casam com a ER de identificador; o
+conflito é resolvido no Problema 2a.</p>
+
+<h3>b) Identificadores</h3>
+<pre>LETRA = [a-zA-Z_]        DIGITO = [0-9]
+ID    = LETRA (LETRA | DIGITO)*          ≡  [a-zA-Z_][a-zA-Z0-9_]*</pre>
+<p>Começa obrigatoriamente com letra ou <code>_</code> (assim <code>2abc</code> nunca é identificador) e continua com
+letras, dígitos ou <code>_</code>. Sem acento, porque o C gerado não aceita acento em nome de variável. Aceita
+<code>fita</code>, <code>_ok</code>, <code>total_2</code>; rejeita <code>2abc</code>, <code>preço</code>,
+<code>a-b</code> (este último vira três tokens: <code>a</code>, <code>-</code>, <code>b</code>).</p>
+
+<h3>c) Números inteiros e reais</h3>
+<pre>NUM_INT  = DIGITO+                     ≡  [0-9]+
+NUM_REAL = DIGITO+ \. DIGITO+          ≡  [0-9]+\.[0-9]+</pre>
+<p>O inteiro é uma sequência de um ou mais dígitos. O real tem <b>exatamente um ponto</b>, com pelo menos um dígito
+de cada lado. <code>3.4.5</code> não é gerado pela ER (teria dois pontos), nem <code>5.</code> ou <code>.5</code>.
+O sinal negativo não faz parte do número: <code>-5</code> são dois tokens (<code>MENOS</code> e
+<code>NUM_INT</code>), e o parser trata o menos unário. Assim, <code>x-5</code> continua sendo uma subtração.</p>
+
+<h3>d) Operadores aritméticos, relacionais e lógicos</h3>
+<pre>ARITMETICO = \+ | - | \* | / | %
+RELACIONAL = == | != | &gt;= | &lt;= | &gt; | &lt;
+LOGICO     = &amp;&amp; | \|\| | !</pre>
+<p><code>+</code>, <code>*</code> e <code>|</code> são escapados com <code>\</code> porque são operadores da própria
+notação de ER. Os de dois caracteres aparecem antes dos de um (ver Problema 2b).</p>
+
+<h3>e) Atribuição, delimitadores e pontuação</h3>
+<pre>ATRIB = =        DELIMITADOR = \( | \) | \{ | \} | ; | ,
+TEXTO = " ( [^"\\\n] | \\[nt"\\] )* "</pre>
+<p><code>=</code> guarda um valor e <code>==</code> compara (Problema 2b). Parênteses agrupam expressões e
+condições; chaves delimitam o programa e os blocos; <code>;</code> termina cada comando; <code>,</code> separa os
+itens do <code>mostra</code>. O texto fica entre aspas duplas, não pode quebrar linha e aceita os escapes
+<code>\n \t \" \\</code>.</p>
+
+<h3>f) Espaços, quebras de linha e comentários</h3>
+<pre>BRANCO        = [ \t\r\n]+
+COMENT_LINHA  = // [^\n]*
+COMENT_BLOCO  = /\* ( [^*] | \*+ [^*/] )* \*+ /       (no código: /\*[\s\S]*?\*/)</pre>
+<p>São reconhecidos e <b>descartados</b> (não viram token). O comentário de linha vai de <code>//</code> até o fim
+da linha. O de bloco vai de <code>/*</code> até o <b>primeiro</b> <code>*/</code> e pode ter várias linhas. A ER
+formal descreve "qualquer coisa que não contenha <code>*/</code>"; no código, o quantificador preguiçoso
+<code>*?</code> faz o mesmo. As quebras de linha dentro dos comentários também são contadas para a posição.</p>
+
+<h3>AFD de dois tokens (ligação com a Aula 3)</h3>
+<p><b>Identificador</b>, estados {q0, q1}, inicial q0, final {q1}:</p>
+<table>
+<tr><th>δ</th><th>letra ou _</th><th>dígito</th><th>outro</th></tr>
+<tr><td>→ q0</td><td>q1</td><td>— (rejeita)</td><td>— (rejeita)</td></tr>
+<tr><td>* q1</td><td>q1</td><td>q1</td><td>— (fim do token)</td></tr>
+</table>
+<p><b>Número real</b>, estados {q0, q1, q2, q3}, inicial q0, final {q3} (o inteiro é aceito em q1):</p>
+<table>
+<tr><th>δ</th><th>dígito</th><th>.</th><th>outro</th></tr>
+<tr><td>→ q0</td><td>q1</td><td>—</td><td>—</td></tr>
+<tr><td>q1 (aceita NUM_INT)</td><td>q1</td><td>q2</td><td>— (fim)</td></tr>
+<tr><td>q2</td><td>q3</td><td>—</td><td>—</td></tr>
+<tr><td>* q3</td><td>q3</td><td>— (segundo ponto: erro)</td><td>— (fim)</td></tr>
+</table>
+<p>Simulação de <code>3.4.5</code>: q0 –3→ q1 –.→ q2 –4→ q3 –.→ sem transição. O léxico não aceita e acusa
+"número malformado". Simulação de <code>10.5</code>: q0 –1→ q1 –0→ q1 –.→ q2 –5→ q3 (final): aceita.</p>
+
+<h2>Problema 2 — Resolução de conflitos e tratamento léxico</h2>
+<p>O léxico tem uma <b>tabela de regras</b> <i>(nome, ER)</i>. Em cada posição do texto, as regras são testadas
+<b>em ordem</b> e a <b>primeira</b> que casa ganha (é o que o <code>re.match</code> do Python faz, e também a
+alternância <code>|</code>: <code>re.match("=|==", "==")</code> devolve <code>=</code>). A ordem da tabela
+resolve os conflitos abaixo.</p>
+
+<h3>a) Prioridade de reconhecimento: palavra reservada × identificador</h3>
+<p><code>se</code>, <code>enquanto</code> e as outras reservadas também são palavras da linguagem de ID. Em vez de
+uma regra por reservada, usamos a técnica clássica (Aho, cap. 3): casar o lexema com a ER de <b>identificador</b> e
+depois consultar a tabela <code>PALAVRAS_RESERVADAS</code>. Se o lexema estiver lá, o token é a palavra reservada;
+senão, é ID. Vantagens: vale o maior casamento (<code>senaozinho</code> é ID inteiro, e não <code>senao</code> +
+<code>zinho</code>), e acrescentar uma palavra reservada é só uma linha na tabela.</p>
+<pre>def criar_token(nome, lexema, linha, coluna):
+    if nome == "ID":
+        tipo = PALAVRAS_RESERVADAS.get(lexema, TipoToken.ID)   # reservada? senão ID
+        return Token(tipo, lexema, None, linha, coluna)</pre>
+
+<h3>b) Maior casamento (longest match)</h3>
+<p>Entre as regras que casam numa posição, o lexema certo é o <b>mais longo</b>: <code>&gt;=</code> é um token só,
+e não <code>&gt;</code> seguido de <code>=</code>. Geradores como o Flex fazem isso sozinhos. No léxico manual,
+garantimos a mesma coisa pela <b>ordem</b> da tabela: os operadores de dois caracteres (<code>== != &gt;= &lt;=
+&amp;&amp; ||</code>) vêm antes dos de um (<code>= ! &gt; &lt;</code>), e NUM_REAL vem antes de NUM_INT. Para
+números e identificadores, o próprio <code>+</code>/<code>*</code> da ER já consome o máximo, e as ERs terminam com
+<code>(?![\w.])</code>, que exige que o número acabe ali. Sem isso, <code>2abc</code> viraria <code>NUM(2)
+ID(abc)</code> em vez de erro.</p>
+<p>Sem o operador longo primeiro, <code>x == 1</code> sairia como <code>ID ATRIB ATRIB NUM</code>, e o parser
+acusaria um erro que não existe.</p>
+
+<h3>c) Controle de posição (linha e coluna)</h3>
+<p>O léxico mantém três contadores: <code>pos</code> (índice no texto), <code>linha</code> (começa em 1) e
+<code>coluna</code> (começa em 1). Cada token (e cada erro) é criado com a linha e a coluna do <b>início</b> do
+lexema. Depois, os contadores avançam: se o lexema não tem quebra de linha, <code>coluna += len(lexema)</code>; se
+tem (espaços com <code>\n</code>, comentário de bloco), <code>linha</code> soma o número de quebras, e a coluna passa
+a ser o número de caracteres depois da última quebra, mais 1. Assim a posição continua certa depois de comentários
+de várias linhas.</p>
+
+<h2>Problema 3 — Implementação</h2>
+<p>Arquivos: <code>tokens.py</code> (tipos de token e palavras reservadas), <code>erros.py</code>
+(<code>ErroLexico</code> com linha e coluna) e <code>lexico.py</code> (o analisador). Uso:
+<code>python lexico.py arquivo.gam</code>.</p>
+<ul>
+<li><b>a) Entrada:</b> lê um arquivo de texto (UTF-8; aceita arquivos com BOM).</li>
+<li><b>b) Saída:</b> imprime a sequência de tokens, um por linha, com <b>linha:coluna</b>, <b>classe</b> e
+<b>lexema</b>. Números já são convertidos (<code>int</code>/<code>float</code>) no campo de valor do token.</li>
+<li><b>c) Erros:</b> regras de erro na tabela reconhecem número malformado (<code>2abc</code>, <code>3.4.5</code>,
+<code>5.</code>), identificador com caractere fora de Σ (<code>preço</code>), texto sem fechar aspas, escape inválido,
+comentário de bloco sem fechar e, por último, o "pega-tudo" <code>.</code>: qualquer outro caractere (<code>@</code>,
+<code>#</code>, <code>&amp;</code> sozinho) é erro. Cada erro registra <b>linha, coluna e lexema</b>, e a leitura
+<b>prossegue</b> depois do lexema problemático. Todos os erros aparecem no fim.</li>
+</ul>
+<p>Código completo de <code>lexico.py</code> (a tabela <code>REGRAS</code> é o coração do léxico; os outros dois
+arquivos estão no .zip):</p>
+<pre>{{ARQUIVO lexico.py}}</pre>
+
+<h2>Problema 4 — Casos de teste e evidências</h2>
+<h3>a) Arquivo válido com todos os tipos de token — <code>06_lexico_todos_tokens.gam</code></h3>
+<pre>{{ARQUIVO testes/06_lexico_todos_tokens.gam}}</pre>
+<p>Saída de <code>python lexico.py testes/06_lexico_todos_tokens.gam</code>:</p>
+<pre>{{LEXICO testes/06_lexico_todos_tokens.gam}}</pre>
+<p>Todas as categorias aparecem: as 9 palavras reservadas, ID, NUM_INT, NUM_REAL, TEXTO (com os 4 escapes), os 5
+aritméticos, ATRIB, os 6 relacionais, os 3 lógicos e os 6 delimitadores. Os comentários de linha e de bloco foram
+descartados, e a posição continuou certa depois do comentário de 2 linhas (o programa começa em 5:1).</p>
+
+<h3>b) Arquivo com erros léxicos propositais — <code>03_erro_lexico.gam</code></h3>
+<pre>{{ARQUIVO testes/03_erro_lexico.gam}}</pre>
+<p>Saída de <code>python lexico.py testes/03_erro_lexico.gam</code>:</p>
+<pre>{{LEXICO testes/03_erro_lexico.gam}}</pre>
+<p>Os 8 erros foram reportados na mesma execução, cada um com linha, coluna e lexema, e os tokens válidos entre eles
+continuaram sendo reconhecidos: o léxico não parou no primeiro erro.</p>
+
+<h2>Referências</h2>
+<p>MENEZES, Paulo Blauth. <i>Linguagens formais e autômatos</i>. 6. ed. Porto Alegre: Bookman, 2011. Cap. 3.<br>
+AHO, Alfred V.; SETHI, Ravi; ULLMAN, Jeffrey D. <i>Compiladores: princípios, técnicas e ferramentas</i>. 2. ed.
+São Paulo: Pearson Addison-Wesley, 2007. Cap. 3.<br>
+PRICE, Ana Maria de Alencar; TOSCANI, Simão Sirineo. <i>Implementação de linguagens de programação:
+compiladores</i>. 2. ed. Porto Alegre: Bookman, 2001. Cap. 2.2.<br>
+UNIJUÍ. Plano de Ensino — Linguagens Formais e Compiladores, 2026. Slides das Aulas 02 e 03.<br>
+PYTHON SOFTWARE FOUNDATION. <i>re — Regular expression operations</i>. https://docs.python.org/3/library/re.html.</p>
+
+<h2>Declaração de uso de Inteligência Artificial generativa</h2>
+<table>
+<tr><th>Item</th><th>Declaração</th></tr>
+<tr><td>Ferramenta</td><td>Claude Code (modelo Claude Opus 5.5, da Anthropic).</td></tr>
+<tr><td>Finalidade</td><td>explicação dos conceitos (token, lexema, maior casamento, palavra reservada ×
+identificador, geradores como Lex/Flex); levantamento das decisões do léxico, apresentadas como perguntas: <b>as
+escolhas (alfabeto, formato dos números, identificadores, comentários, escapes) foram feitas pelo estudante</b>;
+escrita do código do analisador léxico, dos arquivos de teste e do rascunho deste documento.</td></tr>
+<tr><td>Etapas</td><td>Problemas 1 a 4.</td></tr>
+<tr><td>Verificação das ER e dos autômatos</td><td>testes de reconhecimento executados: arquivo com todos os tokens
+válidos (P4a) e arquivo com 8 erros propositais (P4b), com as saídas conferidas à mão, token a token, contra as ER
+do P1; teste isolado de <code>re.match("=|==", "==")</code> × <code>re.match("==|=", "==")</code> para confirmar a
+necessidade da ordem; simulação manual do AFD de número real com <code>10.5</code> e <code>3.4.5</code>; arquivo
+salvo com BOM (achado e corrigido durante os testes).</td></tr>
+<tr><td>Fontes de validação</td><td>slides das Aulas 02 e 03; enunciado do TP1 (tabela de tokens da BIRL-Lite);
+documentação do módulo <code>re</code>. <span class="preencher">[PREENCHER: livros efetivamente consultados]</span></td></tr>
+<tr><td>Alterações do estudante</td><td>definição de todas as escolhas do léxico. <span class="preencher">[PREENCHER:
+o que o estudante alterou no código ou no texto]</span></td></tr>
+</table>
+
+</body>
+</html>

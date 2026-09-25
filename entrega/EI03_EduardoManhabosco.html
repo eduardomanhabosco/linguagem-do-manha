@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>EI03 — Analisador Léxico</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.5pt; line-height: 1.45; color: #1a1a1a; }
+  h1 { font-size: 18pt; margin: 0 0 4px; }
+  h2 { font-size: 14pt; border-bottom: 2px solid #444; padding-bottom: 2px; margin-top: 22px; page-break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 14px 0 4px; page-break-after: avoid; }
+  table { border-collapse: collapse; width: 100%; margin: 6px 0 10px; font-size: 9.5pt; }
+  th, td { border: 1px solid #999; padding: 3px 6px; text-align: left; vertical-align: top; }
+  th { background: #e8e8e8; }
+  tr { page-break-inside: avoid; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: 9.5pt; background: #f1f1f1; padding: 0 2px; }
+  pre { font-family: Consolas, "Courier New", monospace; font-size: 8.6pt; line-height: 1.3; background: #f6f6f6;
+        border: 1px solid #ccc; padding: 6px 8px; white-space: pre-wrap; word-break: break-word; margin: 4px 0 10px; }
+  .cabecalho { border: 1px solid #999; padding: 8px 12px; margin-bottom: 14px; }
+  .preencher { background: #ffe066; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div class="cabecalho">
+  <h1>Estudo Independente 03 — Especificação e Implementação de um Analisador Léxico</h1>
+  <b>Componente curricular:</b> GRP00543 — Linguagens Formais e Compiladores (UNIJUÍ, 2026/2º)<br>
+  <b>Professor:</b> Marcos Ronaldo Melo Cavalheiro<br>
+  <b>Estudante(s):</b><br>Eduardo Manhabosco<br>
+  <b>Data:</b> 25/09/2026<br>
+  <b>Linguagem:</b> Gambiarra (projeto do TP1). Implementação manual em Python, módulo <code>re</code>.
+</div>
+
+<p>A linguagem Gambiarra tem programa e blocos com <code>{ }</code>, declaração <code>remendo x = valor;</code>
+(o tipo vem do valor), saída <code>mostra(...)</code>, entrada <code>pega(x)</code>, decisão
+<code>se/senao</code>, repetição <code>enquanto</code> e os literais lógicos <code>firme</code>/<code>quebrado</code>.</p>
+<pre>// Teste 01: declaração, atribuição e saída (enunciado §8).
+gambiarra {
+    remendo fita = 10;          // inteiro (deduzido do valor)
+    remendo cola = 2.5;         // real
+    remendo ligado = firme;     // lógico
+
+    fita = fita + 5;
+    cola = cola * 2;
+
+    mostra(&quot;fita: &quot;, fita);
+    mostra(&quot;cola: &quot;, cola);
+    mostra(&quot;ligado: &quot;, ligado);
+    mostra(&quot;Sistema Gambiarra iniciado&quot;);
+}
+/* Saída esperada do programa:
+fita: 15
+cola: 5
+ligado: firme
+Sistema Gambiarra iniciado
+*/</pre>
+
+<h2>Problema 1 — Especificação formal dos tokens</h2>
+<p><b>Notação:</b> expressões regulares no estilo JFlex/Python: <code>|</code> = união, <code>*</code> = zero ou
+mais, <code>+</code> = um ou mais, <code>?</code> = opcional, <code>[a-z]</code> = classe de caracteres,
+<code>[^x]</code> = qualquer caractere menos x, <code>\.</code> = o ponto literal. <i>Atenção:</i> nos slides da
+Aula 3, <code>+</code> significa união; aqui, união é <code>|</code>.</p>
+<p><b>Alfabeto:</b> Σ = { a–z, A–Z } ∪ { 0–9 } ∪ { <code>_ " . , ; ( ) { } + - * / % = ! &lt; &gt; &amp; | \</code> } ∪
+{ espaço, tab, quebra de linha }. Letras acentuadas só valem dentro de texto e de comentário.</p>
+
+<h3>a) Palavras reservadas</h3>
+<pre>RESERVADA = gambiarra | remendo | mostra | pega | se | senao | enquanto | firme | quebrado</pre>
+<p>Cada palavra é uma linguagem de uma palavra só, e a união delas é regular. São todas minúsculas e
+<b>diferenciam maiúsculas</b>: <code>Se</code> é identificador. Todas também casam com a ER de identificador; o
+conflito é resolvido no Problema 2a.</p>
+
+<h3>b) Identificadores</h3>
+<pre>LETRA = [a-zA-Z_]        DIGITO = [0-9]
+ID    = LETRA (LETRA | DIGITO)*          ≡  [a-zA-Z_][a-zA-Z0-9_]*</pre>
+<p>Começa obrigatoriamente com letra ou <code>_</code> (assim <code>2abc</code> nunca é identificador) e continua com
+letras, dígitos ou <code>_</code>. Sem acento, porque o C gerado não aceita acento em nome de variável. Aceita
+<code>fita</code>, <code>_ok</code>, <code>total_2</code>; rejeita <code>2abc</code>, <code>preço</code>,
+<code>a-b</code> (este último vira três tokens: <code>a</code>, <code>-</code>, <code>b</code>).</p>
+
+<h3>c) Números inteiros e reais</h3>
+<pre>NUM_INT  = DIGITO+                     ≡  [0-9]+
+NUM_REAL = DIGITO+ \. DIGITO+          ≡  [0-9]+\.[0-9]+</pre>
+<p>O inteiro é uma sequência de um ou mais dígitos. O real tem <b>exatamente um ponto</b>, com pelo menos um dígito
+de cada lado. <code>3.4.5</code> não é gerado pela ER (teria dois pontos), nem <code>5.</code> ou <code>.5</code>.
+O sinal negativo não faz parte do número: <code>-5</code> são dois tokens (<code>MENOS</code> e
+<code>NUM_INT</code>), e o parser trata o menos unário. Assim, <code>x-5</code> continua sendo uma subtração.</p>
+
+<h3>d) Operadores aritméticos, relacionais e lógicos</h3>
+<pre>ARITMETICO = \+ | - | \* | / | %
+RELACIONAL = == | != | &gt;= | &lt;= | &gt; | &lt;
+LOGICO     = &amp;&amp; | \|\| | !</pre>
+<p><code>+</code>, <code>*</code> e <code>|</code> são escapados com <code>\</code> porque são operadores da própria
+notação de ER. Os de dois caracteres aparecem antes dos de um (ver Problema 2b).</p>
+
+<h3>e) Atribuição, delimitadores e pontuação</h3>
+<pre>ATRIB = =        DELIMITADOR = \( | \) | \{ | \} | ; | ,
+TEXTO = " ( [^"\\\n] | \\[nt"\\] )* "</pre>
+<p><code>=</code> guarda um valor e <code>==</code> compara (Problema 2b). Parênteses agrupam expressões e
+condições; chaves delimitam o programa e os blocos; <code>;</code> termina cada comando; <code>,</code> separa os
+itens do <code>mostra</code>. O texto fica entre aspas duplas, não pode quebrar linha e aceita os escapes
+<code>\n \t \" \\</code>.</p>
+
+<h3>f) Espaços, quebras de linha e comentários</h3>
+<pre>BRANCO        = [ \t\r\n]+
+COMENT_LINHA  = // [^\n]*
+COMENT_BLOCO  = /\* ( [^*] | \*+ [^*/] )* \*+ /       (no código: /\*[\s\S]*?\*/)</pre>
+<p>São reconhecidos e <b>descartados</b> (não viram token). O comentário de linha vai de <code>//</code> até o fim
+da linha. O de bloco vai de <code>/*</code> até o <b>primeiro</b> <code>*/</code> e pode ter várias linhas. A ER
+formal descreve "qualquer coisa que não contenha <code>*/</code>"; no código, o quantificador preguiçoso
+<code>*?</code> faz o mesmo. As quebras de linha dentro dos comentários também são contadas para a posição.</p>
+
+<h3>AFD de dois tokens (ligação com a Aula 3)</h3>
+<p><b>Identificador</b>, estados {q0, q1}, inicial q0, final {q1}:</p>
+<table>
+<tr><th>δ</th><th>letra ou _</th><th>dígito</th><th>outro</th></tr>
+<tr><td>→ q0</td><td>q1</td><td>— (rejeita)</td><td>— (rejeita)</td></tr>
+<tr><td>* q1</td><td>q1</td><td>q1</td><td>— (fim do token)</td></tr>
+</table>
+<p><b>Número real</b>, estados {q0, q1, q2, q3}, inicial q0, final {q3} (o inteiro é aceito em q1):</p>
+<table>
+<tr><th>δ</th><th>dígito</th><th>.</th><th>outro</th></tr>
+<tr><td>→ q0</td><td>q1</td><td>—</td><td>—</td></tr>
+<tr><td>q1 (aceita NUM_INT)</td><td>q1</td><td>q2</td><td>— (fim)</td></tr>
+<tr><td>q2</td><td>q3</td><td>—</td><td>—</td></tr>
+<tr><td>* q3</td><td>q3</td><td>— (segundo ponto: erro)</td><td>— (fim)</td></tr>
+</table>
+<p>Simulação de <code>3.4.5</code>: q0 –3→ q1 –.→ q2 –4→ q3 –.→ sem transição. O léxico não aceita e acusa
+"número malformado". Simulação de <code>10.5</code>: q0 –1→ q1 –0→ q1 –.→ q2 –5→ q3 (final): aceita.</p>
+
+<h2>Problema 2 — Resolução de conflitos e tratamento léxico</h2>
+<p>O léxico tem uma <b>tabela de regras</b> <i>(nome, ER)</i>. Em cada posição do texto, as regras são testadas
+<b>em ordem</b> e a <b>primeira</b> que casa ganha (é o que o <code>re.match</code> do Python faz, e também a
+alternância <code>|</code>: <code>re.match("=|==", "==")</code> devolve <code>=</code>). A ordem da tabela
+resolve os conflitos abaixo.</p>
+
+<h3>a) Prioridade de reconhecimento: palavra reservada × identificador</h3>
+<p><code>se</code>, <code>enquanto</code> e as outras reservadas também são palavras da linguagem de ID. Em vez de
+uma regra por reservada, usamos a técnica clássica (Aho, cap. 3): casar o lexema com a ER de <b>identificador</b> e
+depois consultar a tabela <code>PALAVRAS_RESERVADAS</code>. Se o lexema estiver lá, o token é a palavra reservada;
+senão, é ID. Vantagens: vale o maior casamento (<code>senaozinho</code> é ID inteiro, e não <code>senao</code> +
+<code>zinho</code>), e acrescentar uma palavra reservada é só uma linha na tabela.</p>
+<pre>def criar_token(nome, lexema, linha, coluna):
+    if nome == "ID":
+        tipo = PALAVRAS_RESERVADAS.get(lexema, TipoToken.ID)   # reservada? senão ID
+        return Token(tipo, lexema, None, linha, coluna)</pre>
+
+<h3>b) Maior casamento (longest match)</h3>
+<p>Entre as regras que casam numa posição, o lexema certo é o <b>mais longo</b>: <code>&gt;=</code> é um token só,
+e não <code>&gt;</code> seguido de <code>=</code>. Geradores como o Flex fazem isso sozinhos. No léxico manual,
+garantimos a mesma coisa pela <b>ordem</b> da tabela: os operadores de dois caracteres (<code>== != &gt;= &lt;=
+&amp;&amp; ||</code>) vêm antes dos de um (<code>= ! &gt; &lt;</code>), e NUM_REAL vem antes de NUM_INT. Para
+números e identificadores, o próprio <code>+</code>/<code>*</code> da ER já consome o máximo, e as ERs terminam com
+<code>(?![\w.])</code>, que exige que o número acabe ali. Sem isso, <code>2abc</code> viraria <code>NUM(2)
+ID(abc)</code> em vez de erro.</p>
+<p>Sem o operador longo primeiro, <code>x == 1</code> sairia como <code>ID ATRIB ATRIB NUM</code>, e o parser
+acusaria um erro que não existe.</p>
+
+<h3>c) Controle de posição (linha e coluna)</h3>
+<p>O léxico mantém três contadores: <code>pos</code> (índice no texto), <code>linha</code> (começa em 1) e
+<code>coluna</code> (começa em 1). Cada token (e cada erro) é criado com a linha e a coluna do <b>início</b> do
+lexema. Depois, os contadores avançam: se o lexema não tem quebra de linha, <code>coluna += len(lexema)</code>; se
+tem (espaços com <code>\n</code>, comentário de bloco), <code>linha</code> soma o número de quebras, e a coluna passa
+a ser o número de caracteres depois da última quebra, mais 1. Assim a posição continua certa depois de comentários
+de várias linhas.</p>
+
+<h2>Problema 3 — Implementação</h2>
+<p>Arquivos: <code>tokens.py</code> (tipos de token e palavras reservadas), <code>erros.py</code>
+(<code>ErroLexico</code> com linha e coluna) e <code>lexico.py</code> (o analisador). Uso:
+<code>python lexico.py arquivo.gam</code>.</p>
+<ul>
+<li><b>a) Entrada:</b> lê um arquivo de texto (UTF-8; aceita arquivos com BOM).</li>
+<li><b>b) Saída:</b> imprime a sequência de tokens, um por linha, com <b>linha:coluna</b>, <b>classe</b> e
+<b>lexema</b>. Números já são convertidos (<code>int</code>/<code>float</code>) no campo de valor do token.</li>
+<li><b>c) Erros:</b> regras de erro na tabela reconhecem número malformado (<code>2abc</code>, <code>3.4.5</code>,
+<code>5.</code>), identificador com caractere fora de Σ (<code>preço</code>), texto sem fechar aspas, escape inválido,
+comentário de bloco sem fechar e, por último, o "pega-tudo" <code>.</code>: qualquer outro caractere (<code>@</code>,
+<code>#</code>, <code>&amp;</code> sozinho) é erro. Cada erro registra <b>linha, coluna e lexema</b>, e a leitura
+<b>prossegue</b> depois do lexema problemático. Todos os erros aparecem no fim.</li>
+</ul>
+<p>Código completo de <code>lexico.py</code> (a tabela <code>REGRAS</code> é o coração do léxico; os outros dois
+arquivos estão no .zip):</p>
+<pre>&quot;&quot;&quot;
+lexico.py — 1ª estação: o analisador léxico (scanner).
+
+Lê o código-fonte caractere por caractere e devolve a lista de tokens.
+
+Como funciona (a &quot;cascata&quot; do separador de moedas):
+  Em cada posição do texto, as REGRAS abaixo são testadas EM ORDEM, e a
+  primeira que casar ganha. O pedaço casado (o lexema) &quot;cai no buraco&quot; do seu
+  tipo de token. Depois o dedo anda para depois do lexema e tudo recomeça.
+
+Três cuidados que o enunciado e o EI03 cobram:
+  1. Maior casamento (longest match): &#x27;==&#x27; vem ANTES de &#x27;=&#x27; na lista; senão
+     &#x27;==&#x27; cairia no buraco errado e viraria dois &#x27;=&#x27;.  (EI03 P2b)
+  2. Palavra reservada × identificador: &quot;se&quot; casa com a regra de identificador
+     e depois consultamos PALAVRAS_RESERVADAS.  (EI03 P2a)
+  3. Erro léxico: as regras de ERRO (no fim da lista, ou logo depois da regra
+     certa que falhou) guardam o erro com linha, coluna e lexema, e a leitura
+     CONTINUA.  (EI03 P3c)
+
+Uso isolado (só o léxico, útil para o EI03):
+    python lexico.py testes/06_lexico_todos_tokens.gam
+&quot;&quot;&quot;
+
+import re
+import sys
+
+from erros import ErroLexico
+from tokens import PALAVRAS_RESERVADAS, TipoToken, Token
+
+
+# ---------------------------------------------------------------------------
+# Tabela de regras: (nome da regra, expressão regular).
+# A ORDEM IMPORTA: é testada de cima para baixo.
+# Nomes que são um TipoToken viram token; os outros têm tratamento especial
+# (ignorar ou registrar erro) na função analisar().
+# ---------------------------------------------------------------------------
+REGRAS = [
+    # --- ignorados: espaços, quebras de linha e comentários ---
+    (&quot;ESPACO&quot;,          r&quot;[ \t\r\n]+&quot;),
+    (&quot;COMENT_LINHA&quot;,    r&quot;//[^\n]*&quot;),                 # // até o fim da linha
+    (&quot;COMENT_BLOCO&quot;,    r&quot;/\*[\s\S]*?\*/&quot;),           # /* ... */ (o &#x27;?&#x27; pega o PRIMEIRO */)
+    (&quot;ERRO_COMENT&quot;,     r&quot;/\*[\s\S]*&quot;),               # /* sem */ até o fim do arquivo
+
+    # --- texto: aspas duplas, sem quebra de linha, escapes \n \t \&quot; \\ ---
+    (&quot;TEXTO&quot;,           r&#x27;&quot;(?:\\[nt&quot;\\]|[^&quot;\\\n])*&quot;&#x27;),
+    (&quot;ERRO_ESCAPE&quot;,     r&#x27;&quot;(?:\\.|[^&quot;\\\n])*&quot;&#x27;),      # fechou, mas tem escape inválido (ex.: \q)
+    (&quot;ERRO_TEXTO&quot;,      r&#x27;&quot;[^\n]*&#x27;),                  # abriu aspas e a linha acabou
+
+    # --- números: o (?![\w.]) exige que o número termine ali ---
+    #     sem ele, &quot;2abc&quot; viraria NUM(2) ID(abc) e &quot;3.4.5&quot; viraria NUM(3.4) ...
+    (&quot;NUM_REAL&quot;,        r&quot;[0-9]+\.[0-9]+(?![\w.])&quot;),  # 10.5  (real ANTES do inteiro)
+    (&quot;NUM_INT&quot;,         r&quot;[0-9]+(?![\w.])&quot;),          # 10
+    (&quot;ERRO_NUMERO&quot;,     r&quot;[0-9][\w.]*|\.[0-9][\w.]*&quot;),# 2abc, 3.4.5, 5., .5
+
+    # --- identificador (e palavra reservada, decidida depois) ---
+    #     (?!\w) recusa um nome colado a letra acentuada: &quot;preço&quot;
+    (&quot;ID&quot;,              r&quot;[A-Za-z_][A-Za-z0-9_]*(?!\w)&quot;),
+    (&quot;ERRO_ID&quot;,         r&quot;\w+&quot;),                      # nome com acento ou outro caractere fora de Σ
+
+    # --- operadores de DOIS caracteres: antes dos de um (maior casamento) ---
+    (&quot;IGUAL_IGUAL&quot;,     r&quot;==&quot;),
+    (&quot;DIFERENTE&quot;,       r&quot;!=&quot;),
+    (&quot;MAIOR_IGUAL&quot;,     r&quot;&gt;=&quot;),
+    (&quot;MENOR_IGUAL&quot;,     r&quot;&lt;=&quot;),
+    (&quot;E_LOGICO&quot;,        r&quot;&amp;&amp;&quot;),
+    (&quot;OU_LOGICO&quot;,       r&quot;\|\|&quot;),
+
+    # --- operadores e delimitadores de UM caractere ---
+    (&quot;ATRIB&quot;,           r&quot;=&quot;),
+    (&quot;NAO_LOGICO&quot;,      r&quot;!&quot;),
+    (&quot;MAIOR&quot;,           r&quot;&gt;&quot;),
+    (&quot;MENOR&quot;,           r&quot;&lt;&quot;),
+    (&quot;MAIS&quot;,            r&quot;\+&quot;),
+    (&quot;MENOS&quot;,           r&quot;-&quot;),
+    (&quot;VEZES&quot;,           r&quot;\*&quot;),
+    (&quot;DIVIDE&quot;,          r&quot;/&quot;),
+    (&quot;RESTO&quot;,           r&quot;%&quot;),
+    (&quot;ABRE_PAREN&quot;,      r&quot;\(&quot;),
+    (&quot;FECHA_PAREN&quot;,     r&quot;\)&quot;),
+    (&quot;ABRE_CHAVE&quot;,      r&quot;\{&quot;),
+    (&quot;FECHA_CHAVE&quot;,     r&quot;\}&quot;),
+    (&quot;PONTO_VIRGULA&quot;,   r&quot;;&quot;),
+    (&quot;VIRGULA&quot;,         r&quot;,&quot;),
+
+    # --- &quot;pega-tudo&quot;: qualquer outro caractere é ERRO (nunca vira token) ---
+    (&quot;ERRO_CARACTERE&quot;,  r&quot;.&quot;),
+]
+
+# Compila uma vez só (mais rápido e deixa o laço principal limpo).
+REGRAS_COMPILADAS = [(nome, re.compile(padrao)) for nome, padrao in REGRAS]
+
+# Regras que só consomem texto, sem gerar token.
+IGNORADAS = {&quot;ESPACO&quot;, &quot;COMENT_LINHA&quot;, &quot;COMENT_BLOCO&quot;}
+
+# Mensagem de cada regra de erro.
+MENSAGENS_ERRO = {
+    &quot;ERRO_COMENT&quot;:    &quot;comentário de bloco &#x27;/*&#x27; aberto e nunca fechado com &#x27;*/&#x27;&quot;,
+    &quot;ERRO_ESCAPE&quot;:    &quot;texto com sequência de escape inválida (valem só \\n, \\t, \\\&quot; e \\\\)&quot;,
+    &quot;ERRO_TEXTO&quot;:     &quot;texto sem fechar aspas (o texto não pode quebrar linha)&quot;,
+    &quot;ERRO_NUMERO&quot;:    &quot;número malformado (inteiro: 10; real: 10.5; nome não começa com dígito)&quot;,
+    &quot;ERRO_ID&quot;:        &quot;identificador com caractere inválido (use só letras sem acento, dígitos e _)&quot;,
+    &quot;ERRO_CARACTERE&quot;: &quot;caractere que não pertence à linguagem&quot;,
+}
+
+
+def analisar(codigo):
+    &quot;&quot;&quot;
+    Varre o código e devolve (tokens, erros).
+
+    tokens: lista de Token, terminando SEMPRE com um token FIM.
+    erros:  lista de ErroLexico (vazia se deu tudo certo).
+    &quot;&quot;&quot;
+    tokens = []
+    erros = []
+    pos = 0          # o &quot;dedo&quot;: índice do caractere atual no texto
+    linha = 1        # controle de posição (EI03 P2c)
+    coluna = 1
+
+    while pos &lt; len(codigo):
+        # Testa as regras em ordem; fica a PRIMEIRA que casar.
+        for nome, regex in REGRAS_COMPILADAS:
+            casamento = regex.match(codigo, pos)
+            if casamento:
+                break
+        # A última regra (&#x27;.&#x27;) casa com qualquer caractere menos &#x27;\n&#x27;, e o &#x27;\n&#x27;
+        # é pego por ESPACO; então sempre há casamento aqui.
+        lexema = casamento.group()
+
+        if nome in IGNORADAS:
+            pass
+        elif nome.startswith(&quot;ERRO_&quot;):
+            erros.append(ErroLexico(f&quot;{MENSAGENS_ERRO[nome]}: {mostrar_lexema(lexema)}&quot;, linha, coluna))
+        else:
+            tokens.append(criar_token(nome, lexema, linha, coluna))
+
+        # Anda o dedo e atualiza linha/coluna contando as quebras de linha do lexema.
+        quebras = lexema.count(&quot;\n&quot;)
+        if quebras:
+            linha += quebras
+            coluna = len(lexema) - lexema.rfind(&quot;\n&quot;)   # caracteres depois do último &#x27;\n&#x27;, +1
+        else:
+            coluna += len(lexema)
+        pos = casamento.end()
+
+    tokens.append(Token(TipoToken.FIM, &quot;&quot;, None, linha, coluna))
+    return tokens, erros
+
+
+def criar_token(nome, lexema, linha, coluna):
+    &quot;&quot;&quot;Transforma o lexema casado em Token, já convertendo o valor.&quot;&quot;&quot;
+    if nome == &quot;ID&quot;:
+        # Palavra reservada × identificador: consulta a tabela.
+        tipo = PALAVRAS_RESERVADAS.get(lexema, TipoToken.ID)
+        return Token(tipo, lexema, None, linha, coluna)
+    if nome == &quot;NUM_INT&quot;:
+        return Token(TipoToken.NUM_INT, lexema, int(lexema), linha, coluna)
+    if nome == &quot;NUM_REAL&quot;:
+        return Token(TipoToken.NUM_REAL, lexema, float(lexema), linha, coluna)
+    if nome == &quot;TEXTO&quot;:
+        # Guardamos o texto SEM as aspas. Os escapes ficam como estão (\n
+        # continua sendo barra + n), porque o C entende os mesmos escapes.
+        return Token(TipoToken.TEXTO, lexema, lexema[1:-1], linha, coluna)
+    return Token(TipoToken[nome], lexema, None, linha, coluna)
+
+
+def mostrar_lexema(lexema, limite=30):
+    &quot;&quot;&quot;Lexema para a mensagem de erro: entre aspas simples e cortado se for longo.&quot;&quot;&quot;
+    primeira_linha = lexema.split(&quot;\n&quot;, 1)[0]
+    if len(primeira_linha) &gt; limite:
+        primeira_linha = primeira_linha[:limite] + &quot;...&quot;
+    return f&quot;&#x27;{primeira_linha}&#x27;&quot;
+
+
+def tabela_tokens(tokens):
+    &quot;&quot;&quot;Texto com um token por linha: posição, tipo e lexema (a saída do EI03, P3b).&quot;&quot;&quot;
+    linhas = [f&quot;{&#x27;LIN:COL&#x27;:&lt;9}{&#x27;TIPO&#x27;:&lt;15}LEXEMA&quot;]
+    for t in tokens:
+        linhas.append(f&quot;{f&#x27;{t.linha}:{t.coluna}&#x27;:&lt;9}{t.tipo.name:&lt;15}{t.lexema}&quot;)
+    return &quot;\n&quot;.join(linhas)
+
+
+# Rodando este arquivo sozinho: mostra os tokens e os erros léxicos de um arquivo.
+if __name__ == &quot;__main__&quot;:
+    if len(sys.argv) != 2:
+        print(&quot;uso: python lexico.py &lt;arquivo.gam&gt;&quot;)
+        sys.exit(1)
+    sys.stdout.reconfigure(encoding=&quot;utf-8&quot;)
+    with open(sys.argv[1], encoding=&quot;utf-8-sig&quot;) as arquivo:     # -sig: ignora o BOM
+        lista, problemas = analisar(arquivo.read())
+    print(tabela_tokens(lista))
+    for erro in problemas:
+        print(erro)
+    sys.exit(1 if problemas else 0)</pre>
+
+<h2>Problema 4 — Casos de teste e evidências</h2>
+<h3>a) Arquivo válido com todos os tipos de token — <code>06_lexico_todos_tokens.gam</code></h3>
+<pre>// opcoes: --so-lexico
+// Teste 06: todos os tipos de token válidos (EI03 P4a). Só o léxico roda.
+/* comentário
+   de bloco */
+gambiarra {
+    remendo inteiro_1 = 42;
+    remendo real_1 = 3.14;
+    remendo _ok = firme || quebrado &amp;&amp; !firme;
+    se (inteiro_1 == 42 &amp;&amp; inteiro_1 != 0) {
+        mostra(&quot;texto com \&quot;aspas\&quot;, \\ e \t tab\n&quot;, inteiro_1 % 5);
+    } senao {
+        pega(inteiro_1);
+    }
+    enquanto (real_1 &gt;= 1.0 || inteiro_1 &lt;= 0 || inteiro_1 &gt; 1 || inteiro_1 &lt; 2) {
+        real_1 = real_1 / 2 - 1 + 0.5 * -1;
+    }
+}</pre>
+<p>Saída de <code>python lexico.py testes/06_lexico_todos_tokens.gam</code>:</p>
+<pre>LIN:COL  TIPO           LEXEMA
+5:1      GAMBIARRA      gambiarra
+5:11     ABRE_CHAVE     {
+6:5      REMENDO        remendo
+6:13     ID             inteiro_1
+6:23     ATRIB          =
+6:25     NUM_INT        42
+6:27     PONTO_VIRGULA  ;
+7:5      REMENDO        remendo
+7:13     ID             real_1
+7:20     ATRIB          =
+7:22     NUM_REAL       3.14
+7:26     PONTO_VIRGULA  ;
+8:5      REMENDO        remendo
+8:13     ID             _ok
+8:17     ATRIB          =
+8:19     FIRME          firme
+8:25     OU_LOGICO      ||
+8:28     QUEBRADO       quebrado
+8:37     E_LOGICO       &amp;&amp;
+8:40     NAO_LOGICO     !
+8:41     FIRME          firme
+8:46     PONTO_VIRGULA  ;
+9:5      SE             se
+9:8      ABRE_PAREN     (
+9:9      ID             inteiro_1
+9:19     IGUAL_IGUAL    ==
+9:22     NUM_INT        42
+9:25     E_LOGICO       &amp;&amp;
+9:28     ID             inteiro_1
+9:38     DIFERENTE      !=
+9:41     NUM_INT        0
+9:42     FECHA_PAREN    )
+9:44     ABRE_CHAVE     {
+10:9     MOSTRA         mostra
+10:15    ABRE_PAREN     (
+10:16    TEXTO          &quot;texto com \&quot;aspas\&quot;, \\ e \t tab\n&quot;
+10:52    VIRGULA        ,
+10:54    ID             inteiro_1
+10:64    RESTO          %
+10:66    NUM_INT        5
+10:67    FECHA_PAREN    )
+10:68    PONTO_VIRGULA  ;
+11:5     FECHA_CHAVE    }
+11:7     SENAO          senao
+11:13    ABRE_CHAVE     {
+12:9     PEGA           pega
+12:13    ABRE_PAREN     (
+12:14    ID             inteiro_1
+12:23    FECHA_PAREN    )
+12:24    PONTO_VIRGULA  ;
+13:5     FECHA_CHAVE    }
+14:5     ENQUANTO       enquanto
+14:14    ABRE_PAREN     (
+14:15    ID             real_1
+14:22    MAIOR_IGUAL    &gt;=
+14:25    NUM_REAL       1.0
+14:29    OU_LOGICO      ||
+14:32    ID             inteiro_1
+14:42    MENOR_IGUAL    &lt;=
+14:45    NUM_INT        0
+14:47    OU_LOGICO      ||
+14:50    ID             inteiro_1
+14:60    MAIOR          &gt;
+14:62    NUM_INT        1
+14:64    OU_LOGICO      ||
+14:67    ID             inteiro_1
+14:77    MENOR          &lt;
+14:79    NUM_INT        2
+14:80    FECHA_PAREN    )
+14:82    ABRE_CHAVE     {
+15:9     ID             real_1
+15:16    ATRIB          =
+15:18    ID             real_1
+15:25    DIVIDE         /
+15:27    NUM_INT        2
+15:29    MENOS          -
+15:31    NUM_INT        1
+15:33    MAIS           +
+15:35    NUM_REAL       0.5
+15:39    VEZES          *
+15:41    MENOS          -
+15:42    NUM_INT        1
+15:43    PONTO_VIRGULA  ;
+16:5     FECHA_CHAVE    }
+17:1     FECHA_CHAVE    }
+18:1     FIM</pre>
+<p>Todas as categorias aparecem: as 9 palavras reservadas, ID, NUM_INT, NUM_REAL, TEXTO (com os 4 escapes), os 5
+aritméticos, ATRIB, os 6 relacionais, os 3 lógicos e os 6 delimitadores. Os comentários de linha e de bloco foram
+descartados, e a posição continuou certa depois do comentário de 2 linhas (o programa começa em 5:1).</p>
+
+<h3>b) Arquivo com erros léxicos propositais — <code>03_erro_lexico.gam</code></h3>
+<pre>// Teste 03: erros léxicos (enunciado §7 e EI03 P4b). O léxico reporta TODOS e continua lendo.
+gambiarra {
+    remendo x = 10;
+    mostra(x @ 2);
+    remendo 2abc = 5;
+    remendo y = 3.4.5;
+    remendo preço = 1;
+    x = x &amp; 1;
+    mostra(&quot;texto sem fechar);
+    remendo z = 5.;
+}
+/* comentário de bloco que nunca fecha</pre>
+<p>Saída de <code>python lexico.py testes/03_erro_lexico.gam</code>:</p>
+<pre>LIN:COL  TIPO           LEXEMA
+2:1      GAMBIARRA      gambiarra
+2:11     ABRE_CHAVE     {
+3:5      REMENDO        remendo
+3:13     ID             x
+3:15     ATRIB          =
+3:17     NUM_INT        10
+3:19     PONTO_VIRGULA  ;
+4:5      MOSTRA         mostra
+4:11     ABRE_PAREN     (
+4:12     ID             x
+4:16     NUM_INT        2
+4:17     FECHA_PAREN    )
+4:18     PONTO_VIRGULA  ;
+5:5      REMENDO        remendo
+5:18     ATRIB          =
+5:20     NUM_INT        5
+5:21     PONTO_VIRGULA  ;
+6:5      REMENDO        remendo
+6:13     ID             y
+6:15     ATRIB          =
+6:22     PONTO_VIRGULA  ;
+7:5      REMENDO        remendo
+7:19     ATRIB          =
+7:21     NUM_INT        1
+7:22     PONTO_VIRGULA  ;
+8:5      ID             x
+8:7      ATRIB          =
+8:9      ID             x
+8:13     NUM_INT        1
+8:14     PONTO_VIRGULA  ;
+9:5      MOSTRA         mostra
+9:11     ABRE_PAREN     (
+10:5     REMENDO        remendo
+10:13    ID             z
+10:15    ATRIB          =
+10:19    PONTO_VIRGULA  ;
+11:1     FECHA_CHAVE    }
+13:1     FIM            
+Erro léxico [linha 4, coluna 14]: caractere que não pertence à linguagem: &#x27;@&#x27;
+Erro léxico [linha 5, coluna 13]: número malformado (inteiro: 10; real: 10.5; nome não começa com dígito): &#x27;2abc&#x27;
+Erro léxico [linha 6, coluna 17]: número malformado (inteiro: 10; real: 10.5; nome não começa com dígito): &#x27;3.4.5&#x27;
+Erro léxico [linha 7, coluna 13]: identificador com caractere inválido (use só letras sem acento, dígitos e _): &#x27;preço&#x27;
+Erro léxico [linha 8, coluna 11]: caractere que não pertence à linguagem: &#x27;&amp;&#x27;
+Erro léxico [linha 9, coluna 12]: texto sem fechar aspas (o texto não pode quebrar linha): &#x27;&quot;texto sem fechar);&#x27;
+Erro léxico [linha 10, coluna 17]: número malformado (inteiro: 10; real: 10.5; nome não começa com dígito): &#x27;5.&#x27;
+Erro léxico [linha 12, coluna 1]: comentário de bloco &#x27;/*&#x27; aberto e nunca fechado com &#x27;*/&#x27;: &#x27;/* comentário de bloco que nun...&#x27;</pre>
+<p>Os 8 erros foram reportados na mesma execução, cada um com linha, coluna e lexema, e os tokens válidos entre eles
+continuaram sendo reconhecidos: o léxico não parou no primeiro erro.</p>
+
+<h2>Referências</h2>
+<p>MENEZES, Paulo Blauth. <i>Linguagens formais e autômatos</i>. 6. ed. Porto Alegre: Bookman, 2011. Cap. 3.<br>
+AHO, Alfred V.; SETHI, Ravi; ULLMAN, Jeffrey D. <i>Compiladores: princípios, técnicas e ferramentas</i>. 2. ed.
+São Paulo: Pearson Addison-Wesley, 2007. Cap. 3.<br>
+PRICE, Ana Maria de Alencar; TOSCANI, Simão Sirineo. <i>Implementação de linguagens de programação:
+compiladores</i>. 2. ed. Porto Alegre: Bookman, 2001. Cap. 2.2.<br>
+UNIJUÍ. Plano de Ensino — Linguagens Formais e Compiladores, 2026. Slides das Aulas 02 e 03.<br>
+PYTHON SOFTWARE FOUNDATION. <i>re — Regular expression operations</i>. https://docs.python.org/3/library/re.html.</p>
+
+<h2>Declaração de uso de Inteligência Artificial generativa</h2>
+<table>
+<tr><th>Item</th><th>Declaração</th></tr>
+<tr><td>Ferramenta</td><td>Claude Code (modelo Claude Opus 5.5, da Anthropic).</td></tr>
+<tr><td>Finalidade</td><td>explicação dos conceitos (token, lexema, maior casamento, palavra reservada ×
+identificador, geradores como Lex/Flex); levantamento das decisões do léxico, apresentadas como perguntas: <b>as
+escolhas (alfabeto, formato dos números, identificadores, comentários, escapes) foram feitas pelo estudante</b>;
+escrita do código do analisador léxico, dos arquivos de teste e do rascunho deste documento.</td></tr>
+<tr><td>Etapas</td><td>Problemas 1 a 4.</td></tr>
+<tr><td>Verificação das ER e dos autômatos</td><td>testes de reconhecimento executados: arquivo com todos os tokens
+válidos (P4a) e arquivo com 8 erros propositais (P4b), com as saídas conferidas à mão, token a token, contra as ER
+do P1; teste isolado de <code>re.match("=|==", "==")</code> × <code>re.match("==|=", "==")</code> para confirmar a
+necessidade da ordem; simulação manual do AFD de número real com <code>10.5</code> e <code>3.4.5</code>; arquivo
+salvo com BOM (achado e corrigido durante os testes).</td></tr>
+<tr><td>Fontes de validação</td><td>slides das Aulas 02 e 03; enunciado do TP1 (tabela de tokens da BIRL-Lite);
+documentação do módulo <code>re</code>. <span class="preencher">[PREENCHER: livros efetivamente consultados]</span></td></tr>
+<tr><td>Alterações do estudante</td><td>definição de todas as escolhas do léxico. <span class="preencher">[PREENCHER:
+o que o estudante alterou no código ou no texto]</span></td></tr>
+</table>
+
+</body>
+</html>
