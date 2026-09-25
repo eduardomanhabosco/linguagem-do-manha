@@ -12,7 +12,7 @@
 Neste repositório só entra o que é da disciplina. A config geral do Claude do PC antigo (`~/.claude/CLAUDE.md`, a skill `modo-estudo` e a memória) ficou de fora. As regras que valem para este trabalho estão no `CLAUDE.md` do projeto, seção "Fluxo de trabalho".
 
 ## Retomar a conversa antiga (opcional)
-`conversa-2026-09-23.jsonl` é a conversa de 23 e 24/09, até o pedido de commit. O jeito mais barato é começar uma sessão nova, porque o `CLAUDE.md` já traz o contexto. Para abrir a antiga mesmo assim, copie o arquivo para fora da pasta do projeto (ex.: Documentos) e rode:
+`conversa-2026-09-23.jsonl` é a conversa de 23 a 25/09 (o estudo dos 13 conceitos), copiada no último commit. O jeito mais barato é começar uma sessão nova, porque o `CLAUDE.md` já traz o contexto. Para abrir a antiga mesmo assim, copie o arquivo para fora da pasta do projeto (ex.: Documentos) e rode:
 `claude --resume "C:\Users\<você>\Documents\conversa-2026-09-23.jsonl"`
 É uma conversa grande. Ao retomar, o Claude Code pode oferecer "Resume from summary" (retomar a partir de um resumo), que gasta menos.
 
